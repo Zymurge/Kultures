@@ -1,0 +1,7 @@
+{
+	"DAO": {
+		"lib": "../spec/testDao.js",
+		"lib": "../bin/prodDao.js",
+		"mongoUrl": "mongodb://localhost:27017"
+	}
+}
