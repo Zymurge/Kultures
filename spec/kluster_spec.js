@@ -36,6 +36,22 @@ describe( "ctor basics", function() {
 		expect( expectedError ).toThrow( "argument is not an array" );
 		done();
 	} );
+	it( "validates all ref.id values of elements of the array are unique", function(done) {
+		let kultures = BuildKultureArray( 1, 2 );
+		kultures[3] = BuildKulture( 1, 1, 1);
+		
+		let expectedError = function() { new Kluster( kultures ) };
+		expect( expectedError ).toThrow( "all IDs in array must be unique" );
+		done();
+	} );
+	it( "validates all elements of input array are valid Kulture objects", function(done) {
+		let kultures = BuildKultureArray( 1, 2 );
+		kultures[3] = { me: "not a Kulture" };
+
+		let expectedError = function() { new Kluster( kultures ) };
+		expect( expectedError ).toThrow( "all elements in the array must be valid Kulture objects" );
+		done();
+	} );
 	it( "cannot be called as a function", function(done) {
 		let k = function() {
 			let boom = Kluster( [ 'garbage', 'more', 'and a bit more' ] );

@@ -3,9 +3,13 @@ var _ = require( 'underscore' );
 var debug = require('debug')('kluster:core');
 
 /**
- * Represents a cluster of kulture objects.
+ * @classdesc Represents a cluster of kulture objects. Contains CRUD operations and (eventually) helper functions.
  * @constructor
- * @param {array} kultures - the list of kulture objects to see the Kluster with
+ * @param {Kulture[]} kultures - the list of kulture objects to seed the Kluster with
+ * @throws {Error} Constructor must be called with the new keyword
+ * @throws {TypeError} The kultures param must be of type Array
+ * @throws {InvalidArgumentException} The Array must contain valid Kulture objects
+ * @throws {InvalidArgumentException} The array must not contain Kulture objects with duplicate IDs
  */
 var Kluster = function Kluster( kultures ) {
   	if ( ! (this instanceof Kluster) )
@@ -14,25 +18,28 @@ var Kluster = function Kluster( kultures ) {
     if( ! (kultures instanceof Array) )
       throw new TypeError( "argument is not an array" );
    
-  	this.kultures = kultures;
+  	this.kultures = {};
+    foreach( k in kultures ) {
+      this.kultures[ k.ref.id ]
+    }
+    kultures;
 }
 
 Kluster.prototype = {
 
   /**
-   * The number of kulture objects in this Kluster
-   * @property The actual count of objects stored
+    * @property {readonly} The actual count of objects stored
    */
   get Count() {
       return this.kultures.length;
   },
 
   /**
-   * Adds a valid kulture object to this Kluster
-   * @param {Kulture} kulture - the object to add
-   * @returns {JSON} with 'success': TRUE|FALSE or 'error': <message>
-   * Error: called without kulture object
-   * Error: called for existing kulture
+   * Adds a valid Kulture object to this Kluster. The id must be unique from any currently stored.
+   * @param {Kulture} kulture the object to add
+   * @returns {Object} with 'success': TRUE|FALSE or 'error': <message>
+   * @returns {Object} Error: called without kulture object
+   * @returns {Object} Error: called for existing kulture
    */
   AddKulture: function( kulture ) {
     debug( "AddKulture called with " + kulture.toString() + " type: " + typeof kulture );
@@ -55,7 +62,7 @@ Kluster.prototype = {
 
   /**
    * Deletes an existing kulture object from this Kluster
-   * @param {string} id - the id object to delete
+   * @param {string} id the id object to delete
    * @returns {JSON} with 'success': TRUE|FALSE or 'error': <message>
    * Error: called without string argument
    * Error: called for non-existant kulture
@@ -83,8 +90,8 @@ Kluster.prototype = {
 
   /**
    * Retrieves a kulture object from this Kluster based on its ID
-   * @param {string} id - the id of object to retrieve
-   * @returns {Kulture} the corresponding object or null if not found
+   * @param {string} id the id of object to retrieve
+   * @returns {Kulture|null} the corresponding object or null if not found
    */
   GetById: function( id ) {
     debug( "GetById: " + JSON.stringify( id ) );
@@ -99,8 +106,8 @@ Kluster.prototype = {
 
   /**
    * Retrieves a kulture object from this Kluster based on its loc
-   * @param {string} loc - the loc of object to retrieve
-   * @returns {Kulture} the corresponding object or null if not found
+   * @param {string} loc the loc of object to retrieve
+   * @returns {Kulture|null} the corresponding object or null if not found
    */
   GetByLoc: function( loc ) {
     debug( "GetByLoc: " + JSON.stringify( loc ) );

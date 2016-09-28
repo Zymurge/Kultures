@@ -1,22 +1,54 @@
+var validator = require('is-my-json-valid');
 var debug = require('debug')('kulture:kulture_data');
+
 module.exports = { Kulture, ValidateThis, ValidationErrors };
 
-function Kulture( json ) {
-  var debug = require('debug')('kulture:kulture_object');
-  debug( "ctor arg = " + json );
+/**
+ * A representation of one 'cell' or independent organism.
+ * Contains properties to track the location, how it's displayed, it's attributes and current status.
+ * @constructor
+ * @param {Object} data - an object with that adheres to kultures schema in the example below
+ * @example
+  {
+    ref: {
+      id: string,
+      name: string
+    },
+    display: {
+      loc: {
+        x: Number,
+        y: Number,
+        z: Number
+      },
+      image: string
+    },
+    attributes: {
+      growth: {tbd},
+      invade: {tbd},
+      defense: {tbd},
+    },
+    status: {
+      energy: Number,
+      health: Number
+    }
+  }
+ */
+function Kulture( data ) {
+  let debug = require('debug')('kulture:kulture_object');
+  debug( "ctor arg = " + data );
 
-  if( typeof json === 'undefined' )
+  if( typeof data === 'undefined' )
     throw new TypeError( 'called with undefined argument' );
 
-	if (!(this instanceof Kulture))
+	if ( ! ( this instanceof Kulture ) )
     throw new Error("Kulture must be called with the new keyword");
  
-	var isValid = validate( json );
+	let isValid = validate( data );
 	if( ! isValid ) {
 		throw new TypeError( validate.errors[0].message + ': ' + validate.errors[0].field );
 	}
 
-  this.data = JSON.parse( JSON.stringify(json) );
+  this.data = JSON.parse( JSON.stringify( data ) );
   this.ref = this.data.ref;
   this.display = this.data.display;
   debug( "ctor(ref.id) = " + this.ref.id );
@@ -29,7 +61,7 @@ function ValidateThis( json ) {
 	return isValid;
 };
 
-// Rsponds null for valid JSON. If invalid, will reply with JSON containing reason.
+// Responds null for valid JSON. If invalid, will reply with JSON containing reason.
 function ValidationErrors( json ) {
   debug( "json:", json );
   var isValid = validate( json );
@@ -40,8 +72,6 @@ function ValidationErrors( json ) {
   debug( "Errors: " + validate.errors[0] );
   return validate.errors[0];
 }
-
-var validator = require('is-my-json-valid');
 
 var validate = validator({
   title: 'Kulture data definition',
