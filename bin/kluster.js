@@ -10,7 +10,7 @@ var debug = require('debug')('kluster:core');
  * @throws {TypeError} The kultures param must be of type Array
  * @throws {TypeError} The Array must contain valid Kulture objects
  * @throws {Error} The array must not contain Kulture objects with duplicate IDs
- * TODO: Convert last 2 Errors to InvalidArgumentException
+ * @todo Convert last 2 Errors to InvalidArgumentException
  */
 var Kluster = function Kluster( kulturesArray ) {
   	if ( ! (this instanceof Kluster) )
@@ -32,16 +32,6 @@ var Kluster = function Kluster( kulturesArray ) {
 
       this.kultures[ k.Id ] = k;
     }
-
-/*
-      return { success: false, error: "called without kulture object" };
-    }
-
-    if( this.GetById( kulture.Id ) ) {
-      debug( "duplicate id found in array: " + kulture.Id );
-      return { success: false, error: "called for existing kulture" };
-    }
-*/
 }
 
 Kluster.prototype = {
