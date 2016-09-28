@@ -5,24 +5,43 @@ var debug = require('debug')('kluster:core');
 /**
  * @classdesc Represents a cluster of kulture objects. Contains CRUD operations and (eventually) helper functions.
  * @constructor
- * @param {Kulture[]} kultures - the list of kulture objects to seed the Kluster with
+ * @param {Kulture[]} kulturesArray the list of kulture objects to seed the Kluster with
  * @throws {Error} Constructor must be called with the new keyword
  * @throws {TypeError} The kultures param must be of type Array
- * @throws {InvalidArgumentException} The Array must contain valid Kulture objects
- * @throws {InvalidArgumentException} The array must not contain Kulture objects with duplicate IDs
+ * @throws {TypeError} The Array must contain valid Kulture objects
+ * @throws {Error} The array must not contain Kulture objects with duplicate IDs
+ * TODO: Convert last 2 Errors to InvalidArgumentException
  */
-var Kluster = function Kluster( kultures ) {
+var Kluster = function Kluster( kulturesArray ) {
   	if ( ! (this instanceof Kluster) )
       throw new Error( "Kluster must be called with the new keyword" );
 
-    if( ! (kultures instanceof Array) )
+    if( ! ( kulturesArray instanceof Array ) )
       throw new TypeError( "argument is not an array" );
    
   	this.kultures = {};
-    foreach( k in kultures ) {
-      this.kultures[ k.ref.id ]
+    for( k of kulturesArray ) {
+      if( !( k instanceof Kulture ) ) {
+        debug( "array element not instanceof Kulture -- throwing" );
+        throw new TypeError( "All elements in the array must be valid Kulture objects" );
+      }
+      if( this.kultures.hasOwnProperty( k.Id ) ) {
+        debug( "duplicate id found in array: " + k.Id );
+        throw new Error( "All IDs in array must be unique. Duplicate: " + k.Id );
+      }
+
+      this.kultures[ k.Id ] = k;
     }
-    kultures;
+
+/*
+      return { success: false, error: "called without kulture object" };
+    }
+
+    if( this.GetById( kulture.Id ) ) {
+      debug( "duplicate id found in array: " + kulture.Id );
+      return { success: false, error: "called for existing kulture" };
+    }
+*/
 }
 
 Kluster.prototype = {
@@ -31,7 +50,7 @@ Kluster.prototype = {
     * @property {readonly} The actual count of objects stored
    */
   get Count() {
-      return this.kultures.length;
+      return Object.keys( this.kultures ).length;
   },
 
   /**
@@ -49,15 +68,13 @@ Kluster.prototype = {
       return { success: false, error: "called without kulture object" };
     }
 
-    if( this.GetById( kulture.ref.id ) ) {
-      debug( "duplicate id found in array: " + kulture.ref.id );
+    if( this.GetById( kulture.Id ) ) {
+      debug( "duplicate id found in array: " + kulture.Id );
       return { success: false, error: "called for existing kulture" };
     }
 
-    let prepushCount = this.Count;
-    debug( "prepushCount", prepushCount );
-    let result = this.kultures.push( kulture );
-    return { success: result == prepushCount + 1 };
+    this.kultures[ kulture.Id ] = kulture;
+    return { success: true };
   },
 
   /**
@@ -74,18 +91,15 @@ Kluster.prototype = {
       return { success: false, error: "called without string argument" };
     }
 
-    let prepushCount = this.Count;
-    for( var i=0; i < this.kultures.length; i++ ) {
-      if( this.kultures[i].ref.id === id ) {
-        debug( "length before splice: " + this.Count );
-        this.kultures.splice( i, 1 );
-        debug( "length after splice: " + this.Count );
-        return { success: this.Count == prepushCount - 1 };
-      }
-    }
-
-    debug( "id not found for deletion" );
-    return { success: false, error: "called for non-existant kulture" };
+    debug( "DeleteKultureById:", JSON.stringify( id ) );
+    if( this.kultures.hasOwnProperty( id ) ) {
+      debug( "DeleteKultureById found", id );
+      delete this.kultures[id];
+      return { success: true };
+    } else {
+      debug( "DeleteKultureById not found", id );
+      return { success: false, error: "called for non-existant kulture" };
+   }
   },
 
   /**
@@ -95,13 +109,13 @@ Kluster.prototype = {
    */
   GetById: function( id ) {
     debug( "GetById: " + JSON.stringify( id ) );
-    for( var i=0; i < this.kultures.length; i++ ) {
-      if( this.kultures[i].ref.id === id ) {
-        return this.kultures[i];
-      }
+    if( this.kultures.hasOwnProperty( id ) ) {
+      debug( "GetById found", id );
+      return this.kultures[id];
+    } else {
+      debug( "id not found", id );
+      return null;
     }
-    debug( "id not found", id );
-    return null;
   },
 
   /**
@@ -111,10 +125,10 @@ Kluster.prototype = {
    */
   GetByLoc: function( loc ) {
     debug( "GetByLoc: " + JSON.stringify( loc ) );
-    for( var i=0; i < this.kultures.length; i++ ) {
-      //debug( "k" + i + ": " + JSON.stringify( this.kultures[i].display.loc ) );
-      if( _.isEqual( this.kultures[i].display.loc, loc ) ) {
-        return this.kultures[i];
+    for( id in this.kultures ) {
+      //debug( "id:",JSON.stringify( this.kultures[id].display.loc ) );
+      if( _.isEqual( this.kultures[id].display.loc, loc ) ) {
+        return this.kultures[id];
       }
     }
     debug( "loc not found", loc );

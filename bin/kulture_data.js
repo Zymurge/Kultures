@@ -1,8 +1,6 @@
 var validator = require('is-my-json-valid');
 var debug = require('debug')('kulture:kulture_data');
 
-module.exports = { Kulture, ValidateThis, ValidationErrors };
-
 /**
  * A representation of one 'cell' or independent organism.
  * Contains properties to track the location, how it's displayed, it's attributes and current status.
@@ -33,7 +31,7 @@ module.exports = { Kulture, ValidateThis, ValidationErrors };
     }
   }
  */
-function Kulture( data ) {
+var Kulture = function Kulture( data ) {
   let debug = require('debug')('kulture:kulture_object');
   debug( "ctor arg = " + data );
 
@@ -41,19 +39,32 @@ function Kulture( data ) {
     throw new TypeError( 'called with undefined argument' );
 
 	if ( ! ( this instanceof Kulture ) )
-    throw new Error("Kulture must be called with the new keyword");
+    throw new Error( "Kulture must be called with the new keyword" );
  
 	let isValid = validate( data );
 	if( ! isValid ) {
 		throw new TypeError( validate.errors[0].message + ': ' + validate.errors[0].field );
 	}
 
+  // force deep copy
   this.data = JSON.parse( JSON.stringify( data ) );
+  // map sections up one level to object attributes
   this.ref = this.data.ref;
   this.display = this.data.display;
+  this.attributes = this.data.attributes;
+  this.status = this.data.status;
   debug( "ctor(ref.id) = " + this.ref.id );
-  //this.ref = json.ref;
 };
+
+Kulture.prototype = {
+  
+  /**
+    * @property {readonly} The ID field (from ref.id) of this kulture
+    */
+  get Id() {
+    return this.ref.id;
+  }
+}
 
 function ValidateThis( json ) {
   var isValid = validate( json );
@@ -122,3 +133,5 @@ var validate = validator({
   },
   required: [ 'ref', 'display', 'attributes', 'status' ]
 })
+
+module.exports = { Kulture, ValidateThis, ValidationErrors };

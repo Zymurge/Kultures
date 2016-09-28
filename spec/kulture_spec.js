@@ -84,6 +84,23 @@ describe( "accessors expose", function() {
 		expect( k.display.loc.y ).toBe( 2 );
 		done();
 	} );
+	it( "attributes property", function(done) {
+		expect( k.attributes ).toBeTruthy();
+		expect( k.attributes.growth ).toBeTruthy();
+		expect( k.attributes.growth['factor'] ).toBe( 5 );
+		done();
+	} );
+	it( "status property", function(done) {
+		expect( k.status ).toBeTruthy();
+		expect( k.status.energy ).toBeTruthy();
+		expect( k.status.energy ).toBe( 100 );
+		done();
+	} );
+	it( "Id property", function(done) {
+		expect( k.Id ).toBeTruthy();
+		expect( k.Id ).toBe( '13' );
+		done();
+	} );
 });
 
 describe( "Validator validation", function() {
@@ -147,7 +164,7 @@ var test_json =
 			image: 'unknown'
 		},
 		attributes: {
-			growth: {},
+			growth: { factor: 5 },
 			invade: {},
 			defense: {},
 		},

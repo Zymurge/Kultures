@@ -10,8 +10,8 @@ describe( "Helper functions:", function() {
 		expect( k.length ).toBe( 216 );
 		expect( k[0] ).toBeTruthy();
 		expect( k[0].ref ).toBeTruthy();
-		expect( k[0].ref.id ).toBe( '-2.-2.-2' );
-		expect( k[215].ref.id ).toBe( '3.3.3' );
+		expect( k[0].Id ).toBe( '-2.-2.-2' );
+		expect( k[215].Id ).toBe( '3.3.3' );
 		expect( k[214].display ).toBeTruthy();
 		expect( k[214].display.loc.x ).toBe( 3 );
 		expect( k[214].display.loc.z ).toBe( 2 );  
@@ -36,12 +36,12 @@ describe( "ctor basics", function() {
 		expect( expectedError ).toThrow( "argument is not an array" );
 		done();
 	} );
-	it( "validates all ref.id values of elements of the array are unique", function(done) {
+	it( "validates all Id values of elements of the array are unique", function(done) {
 		let kultures = BuildKultureArray( 1, 2 );
 		kultures[3] = BuildKulture( 1, 1, 1);
 		
 		let expectedError = function() { new Kluster( kultures ) };
-		expect( expectedError ).toThrow( "all IDs in array must be unique" );
+		expect( expectedError ).toThrow( "All IDs in array must be unique. Duplicate: " + kultures[3].Id );
 		done();
 	} );
 	it( "validates all elements of input array are valid Kulture objects", function(done) {
@@ -49,7 +49,7 @@ describe( "ctor basics", function() {
 		kultures[3] = { me: "not a Kulture" };
 
 		let expectedError = function() { new Kluster( kultures ) };
-		expect( expectedError ).toThrow( "all elements in the array must be valid Kulture objects" );
+		expect( expectedError ).toThrow( "All elements in the array must be valid Kulture objects" );
 		done();
 	} );
 	it( "cannot be called as a function", function(done) {
@@ -70,13 +70,13 @@ describe( "GetById", function() {
 	it( "positive test case", function(done) {
 		let result = k.GetById( '0.0.0' );
 		expect( result ).toBeTruthy();
-		expect( result.ref.id ).toBe( '0.0.0' );
+		expect( result.Id ).toBe( '0.0.0' );
 		done();
 	} );
 		it( "gets the last element", function(done) {
 		let result = k.GetById( '1.1.1' );
 		expect( result ).toBeTruthy();
-		expect( result.ref.id ).toBe( '1.1.1' );
+		expect( result.Id ).toBe( '1.1.1' );
 		done();
 	} );
 
@@ -101,13 +101,13 @@ describe( "GetByLoc", function() {
 	it( "positive test case", function(done) {
 		let result = k.GetByLoc( { x: 0, y: 0, z: 0 } );
 		expect( result ).toBeTruthy();
-		expect( result.ref.id ).toBe( '0.0.0' );
+		expect( result.Id ).toBe( '0.0.0' );
 		done();
 	} );
 	it( "should work with loc elements out of order", function(done) {
 		let result = k.GetByLoc( { z: 0, y: 0, x: 0 } );
 		expect( result ).toBeTruthy();
-		expect( result.ref.id ).toBe( '0.0.0' );
+		expect( result.Id ).toBe( '0.0.0' );
 		done();
 	} );
 
