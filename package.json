@@ -6,7 +6,11 @@
     "start": "node ./bin/www",
     "pretest": "start spec\\start_mock_server.cmd && timeout 3",
     "test": "jasmine-node spec",
-    "cover": "istanbul cover --include-all-sources node_modules\\jasmine-node\\bin\\jasmine-node spec && start coverage\\lcov-report\\index.html"
+    "cover": "istanbul cover --include-all-sources node_modules\\jasmine-node\\bin\\jasmine-node spec && start coverage\\lcov-report\\index.html",
+    "cover-kluster": "istanbul cover --include-all-sources node_modules\\jasmine-node\\bin\\jasmine-node spec\\kluster_spec.js && start coverage\\lcov-report\\Kultures\\bin\\index.html",
+    "cover-kulture": "istanbul cover --include-all-sources node_modules\\jasmine-node\\bin\\jasmine-node spec\\kulture_spec.js && start coverage\\lcov-report\\Kultures\\bin\\index.html",
+    "cover-dao": "istanbul cover --include-all-sources node_modules\\jasmine-node\\bin\\jasmine-node spec\\dao_spec.js && start coverage\\lcov-report\\Kultures\\bin\\index.html"
+
   },
   "dependencies": {
     "body-parser": "~1.13.2",

@@ -118,7 +118,23 @@ describe( "With Mongodb running, DBAccess MongoInsertKulture", function() {
 			.finally( () => { done(); } )
 	} );
 	it( "returns on error on attempt to insert existing id", function( done ) {
-			done( expect( "Not implemented" ).toBe( false ) );
+		client.MongoInsertKulture( testKulture )
+			.then( ( id ) => {
+				debug( "successfully inserted: ", id );
+				expect( id ).toBe( testKulture.ref.id );
+				// if successful try the same insert again
+				return client.MongoInsertKulture( testKulture );
+			} )
+			.then( ( kulture ) => {
+				debug( "success when error expected on duplicate insert" );
+				expect( result ).toBeNull(); // force fail				
+			})
+			.catch( ( error ) => {
+				debug( "Caught (expected) error: ", error );
+				expect( error ).toBeTruthy();
+				expect( error ).toBe( 'duplicate id' );
+			} )
+			.finally( () => { done(); } )
 	} );
 	it("handles mongo connection errors on insert", function( done ) {
 		let mockClient = GetConnectErrorClient( "mongodb://it.dont.matter" );
@@ -131,7 +147,7 @@ describe( "With Mongodb running, DBAccess MongoInsertKulture", function() {
 			.catch( ( error ) => {
 				debug( "Caught (expected) error: ", error );
 				expect( error ).toBeTruthy();
-				expect( error ).toBe( 'simulated connection error' );
+				expect( error ).toBe( "MongoDb error code: -1" );
 				done();
 			} );
 	} );
@@ -179,7 +195,7 @@ describe( "With Mongodb running, DBAccess MongoDeleteKulture", function() {
 			.catch( ( error ) => {
 				debug( "Caught (expected) error: ", error );
 				expect( error ).toBeTruthy();
-				expect( error ).toBe( 'simulated connection error' );
+				expect( error ).toBe( "MongoDb error code: -1" );
 				done();
 			} );
 	} );
@@ -239,7 +255,7 @@ describe( "With Mongodb running, DBAccess MongoFetchId", function() {
 			.catch( ( error ) => {
 				debug( "Caught (expected) error: ", error );
 				expect( error ).toBeTruthy();
-				expect( error ).toBe( 'simulated connection error' );
+				expect( error ).toBe( "MongoDb error code: -1" );
 				done();
 			} );
 	} );
@@ -505,7 +521,7 @@ let GetConnectErrorClient = function( url ) {
 	let myClient = new DB.DbAccess( url );
 	myClient.ConnectToMongo = function() {
 		debug( "Fake ConnectToMongo called - rejecting" );
-		return Promise.reject( "simulated connection error" );
+		return Promise.reject( { name: "MockClient", code: -1, message: "simulated connection error" } );
 	};
 	return myClient;
 }

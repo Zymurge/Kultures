@@ -147,10 +147,14 @@ DbAccess.prototype = {
 	                debugDbAccess(".. found: ", kulture);
 	                fulfill(kulture !== null ? kulture : {});
 	            })
-                .catch(function (err) {
-	                debugDbAccess("mongo fetch error: ", err);
-	                reject(err);
-	            })
+                .catch( function (err) {
+                   debugDbAccess( "mongo fetch error: ", err['name'], err['code'], err['message'] );
+                    if( err['code']===11000 ) {
+                        reject( "duplicate id" );
+                    } else {
+                      reject( "MongoDb error code: " + err['code'] );
+                    }
+                })
 	            .finally( () => {
 	            	debugDbAccess( "closing MongoClient connection" );
 	            	self.connection.close();
@@ -177,8 +181,12 @@ DbAccess.prototype = {
 	                fulfill(kulture.ref.id);
 	            })
     	        .catch( function (err) {
-	               debugDbAccess("mongo insert error: ", err);
- 	               reject(err);
+	               debugDbAccess( "mongo insert error: ", err['name'], err['code'], err['message'] );
+                    if( err['code']===11000 ) {
+                        reject( "duplicate id" );
+                    } else {
+ 	                  reject( "MongoDb error code: " + err['code'] );
+                    }
  	        	})
     	    	.finally( () => {
         	    	debugDbAccess( "closing MongoClient connection" );
@@ -201,14 +209,18 @@ DbAccess.prototype = {
 	                kultureCollection = self.connection.collection('kultures');
 	                return kultureCollection.deleteOne({ 'ref.id': kultureId });
 	            } )
-	            .then(function (result) {
+	            .then( function (result) {
 	                debugDbAccess(".. delete count: ", result.deletedCount);
 	                fulfill(kultureId);
 	            })
-	            .catch(function (err) {
-	                debugDbAccess("mongo delete error: ", err);
-	                reject(err);
-	            })
+                .catch( function (err) {
+                   debugDbAccess( "mongo delete error: ", err['name'], err['code'], err['message'] );
+                    if( err['code']===11000 ) {
+                        reject( "duplicate id" );
+                    } else {
+                      reject( "MongoDb error code: " + err['code'] );
+                    }
+                })
 			    .finally( () => {
 		    	    debugDbAccess( "closing MongoClient connection" );
 		        	self.connection.close();

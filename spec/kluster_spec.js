@@ -196,6 +196,37 @@ describe( "DeleteKultureById", function() {
 	} );	
 } );
 
+/*
+  Returns object:
+  {
+	0pm: id,
+	0mp: id,
+	p0m: id,
+	pm0: id,
+	m0p: id,
+	mp0: id
+  }
+ */
+describe( "GetNeighbors", function() {
+	let k;
+	beforeEach( function() {
+		k = new Kluster( BuildKultureArray( -1, 1 ) );
+	} );
+	it( "positive test case", function(done) {
+		let neighbors = k.GetNeighbors( '0.0.0' );
+		expect( neighbors['0pm'] ).toBeTruthy();
+		expect( neighbors['0pm'].Id ).toBeTruthy();
+		expect( neighbors['0pm'].Id ).toBe( '0.1.-1' );
+		expect( neighbors['m0p'] ).toBeTruthy();
+		expect( neighbors['m0p'].Id ).toBeTruthy();
+		expect( neighbors['m0p'].Id ).toBe( '-1.0.1' );
+		expect( neighbors['pm0'] ).toBeTruthy();
+		expect( neighbors['pm0'].Id ).toBeTruthy();
+		expect( neighbors['pm0'].Id ).toBe( '1.-1.0' );
+		done();
+	} );
+} );
+
 // Helper functions
 
 function ExpectJSONValidateToThrow( good_json, deleteNode ) {

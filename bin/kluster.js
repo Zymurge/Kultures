@@ -101,6 +101,7 @@ Kluster.prototype = {
     debug( "GetById: " + JSON.stringify( id ) );
     if( this.kultures.hasOwnProperty( id ) ) {
       debug( "GetById found", id );
+      debugger;
       return this.kultures[id];
     } else {
       debug( "id not found", id );
@@ -123,10 +124,28 @@ Kluster.prototype = {
     }
     debug( "loc not found", loc );
     return null;
+  },
+
+  /**
+   * Finds the (up to) 6 immediately surrounding tiles
+   * @param {string} id the id of the Kulture in the Kluster to find neighbors for
+   * @returns {object} references to the surrounding neighbors accessed by their encoded relationship
+   */
+  GetNeighbors: function( id ) {
+    debug( "GetNeighbors: " + JSON.stringify( id ) );
+    let result = {};
+    let centerLoc = this.GetById( id ).display.loc;
+    result['0pm'] = this.GetByLoc( { x: centerLoc.x, y: centerLoc.y + 1, z: centerLoc.z - 1 } );
+    result['0mp'] = this.GetByLoc( { x: centerLoc.x, y: centerLoc.y - 1, z: centerLoc.z + 1 } );
+    result['p0m'] = this.GetByLoc( { x: centerLoc.x + 1, y: centerLoc.y, z: centerLoc.z - 1 } );
+    result['pm0'] = this.GetByLoc( { x: centerLoc.x + 1, y: centerLoc.y - 1, z: centerLoc.z } );
+    result['mp0'] = this.GetByLoc( { x: centerLoc.x - 1, y: centerLoc.y + 1, z: centerLoc.z } );
+    result['m0p'] = this.GetByLoc( { x: centerLoc.x - 1, y: centerLoc.y, z: centerLoc.z + 1 } );
+    return result;
   }
-
-
 }
+
+
 
 /*
 
