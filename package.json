@@ -6,11 +6,11 @@
     "start": "node ./bin/www",
     "pretest": "start spec\\start_mock_server.cmd && timeout 3",
     "test": "jasmine-node spec",
+    "test-dao": "jasmine-node spec\\dao_spec.js",
     "cover": "istanbul cover --include-all-sources node_modules\\jasmine-node\\bin\\jasmine-node spec && start coverage\\lcov-report\\index.html",
     "cover-kluster": "istanbul cover --include-all-sources node_modules\\jasmine-node\\bin\\jasmine-node spec\\kluster_spec.js && start coverage\\lcov-report\\Kultures\\bin\\index.html",
     "cover-kulture": "istanbul cover --include-all-sources node_modules\\jasmine-node\\bin\\jasmine-node spec\\kulture_spec.js && start coverage\\lcov-report\\Kultures\\bin\\index.html",
     "cover-dao": "istanbul cover --include-all-sources node_modules\\jasmine-node\\bin\\jasmine-node spec\\dao_spec.js && start coverage\\lcov-report\\Kultures\\bin\\index.html"
-
   },
   "dependencies": {
     "body-parser": "~1.13.2",
@@ -30,8 +30,13 @@
     "sinon": "^1.17.4"
   },
   "devDependencies": {
+    "chai": "~3.5.0",
+    "chai-as-promised": "^6.0.0",
     "frisby": "^0.8.5",
     "jasmine": "^2.4.1",
-    "jasmine-json": "0.0.3"
+    "jasmine-json": "0.0.3",
+    "mocha": "~3.2.0",
+    "nodemon": "",
+    "sinon": "^1.17.7"
   }
 }

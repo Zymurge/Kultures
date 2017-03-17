@@ -3,6 +3,13 @@ let debug = require('debug')('test:DAO');
 let MongoClient = require('mongodb').MongoClient;
 let Promise = require( 'promise' );
 let _ = require( 'underscore' );
+let sinon = require( 'sinon' );
+
+let chai = require( 'chai' );
+let chaiAsPromised = require( 'chai-as-promised' );
+chai.use(chaiAsPromised);
+let expect = chai.expect;
+let should = chai.should;
 
 let testMongoUrl = "mongodb://localhost";
 let testKultureCollection = "kultures"; 
@@ -33,231 +40,210 @@ let testKulture = {
 describe( "DbAccess constructor", function() {
 	it( "creates values properly with default timeout", function( done ) {
 		let db = new DB.DbAccess( testMongoUrl );
-		expect( db ).toBeTruthy();
-		expect( db.mongoUrl ).toBe( testMongoUrl );
-		expect( db.connection ).toBeNull();
-		expect( db.connectStr ).toBe( testMongoUrl + "/?connectTimeoutMS=4000" );
+		expect( db ).not.to.be.null;
+		expect( db.mongoUrl ).to.equal( testMongoUrl );
+		expect( db.connection ).to.be.null;
+		expect( db.connectStr ).to.equal( testMongoUrl + "/?connectTimeoutMS=4000" );
 		done();
 	} );
 	it( "creates values properly with explicit timeout", function( done ) {
 		let db = new DB.DbAccess( testMongoUrl, 50000 );
-		expect( db ).toBeTruthy();
-		expect( db.connectStr ).toBe( testMongoUrl + "/?connectTimeoutMS=50000" );
+		expect( db ).not.to.be.null;
+		expect( db.connectStr ).to.equal( testMongoUrl + "/?connectTimeoutMS=50000" );
 		done();
 	} );
 	it( "handles url with post-pended /", function( done ) {
 		let pp_url = "mongodb://post-pended_url/";
 		let pp_url_fixed = "mongodb://post-pended_url";
 		let db = new DB.DbAccess( pp_url );
-		expect( db ).toBeTruthy();
-		expect( db.mongoUrl ).toBe( pp_url_fixed );
-		expect( db.connectStr ).toBe( pp_url + "?connectTimeoutMS=4000" );
+		expect( db ).not.to.be.null;
+		expect( db.mongoUrl ).to.equal( pp_url_fixed );
+		expect( db.connectStr ).to.equal( pp_url + "?connectTimeoutMS=4000" );
 		done();
 	} )
 	it( "throws on bad url", function( done ) {
 		let badUrl = "mangled-db://Imabadurl";
-		expect( () => { new DB.DbAccess( badUrl ); } ).toThrow();
+		expect( () => { new DB.DbAccess( badUrl ); } ).to.throw( Error );
 		done();
 	} );
 } );
 
-describe( "With Mongodb running, DBAccess ConnectToMongo", function() {
+describe( "With Mongodb running", function() {
 	let client;
 	let beforeCnt = 1;
+	let running = false; // add check for Mongo running
 	beforeEach( function() {
 		debug( "++++++++\n@beforeEach case #" + beforeCnt++ );
-		client = new DB.DbAccess( "mongodb://localhost" );
-		MongoClean( testKultureCollection )
-			.then( ( result ) => {
-				debug( "@beforeEach - MongoClean returned: ", result );
-			});
+		if( running ) { 
+			client = new DB.DbAccess( "mongodb://localhost" );
+			MongoClean( testKultureCollection )
+				.then( ( result ) => {
+					debug( "@beforeEach - MongoClean returned: ", result );
+				} );
+		} else {
+			debug( "No Mongo, should be skipping this section" );
+			this.skip();
+		};
 	} );
-	it( "can connect at localhost", function( done ) {
-		client.ConnectToMongo()
-			.then( ( db ) => {
-				expect( db ).toBeTruthy();
-				expect( db.databaseName ).not.toBeNull();
-				db.close();
-				done();
-			} )
-			.catch( ( err ) => {
-				debug( "ConnectToMongo err: ", err );
-				expect( err ).not.toBeTruthy( "should not get here with a connection" );
-				done();
-			} )
+		
+	describe( "DBAccess ConnectToMongo", function() {
+		it( "can connect at localhost", function( done ) {
+			client.ConnectToMongo()
+				.then( ( db ) => {
+					expect( db ).not.to.be.null;
+					expect( db.databaseName ).not.to.be.null;
+					db.close();
+					done();
+				} )
+				.catch( ( err ) => {
+					debug( "ConnectToMongo err: ", err );
+					expect( err ).not.to.beTruthy( "should not get here with a connection" );
+					done();
+				} )
+		} );
 	} );
-} );
 
-describe( "With Mongodb running, DBAccess MongoInsertKulture", function() {
-	let client;
-	let beforeCnt = 1;
-	beforeEach( function() {
-		debug( "++++++++\n@beforeEach case #" + beforeCnt++ );
-		client = new DB.DbAccess( "mongodb://localhost" );
-		MongoClean( testKultureCollection )
-			.then( ( result ) => {
-				debug( "@beforeEach - MongoClean returned: ", result );
-			});
+	describe( "DBAccess MongoInsertKulture", function() {
+		it("inserts a record", function( done ) {
+			client.MongoInsertKulture( testKulture )
+				.then( ( id ) => {
+					debug( "successfully inserted: ", id );
+					expect( id ).to.equal( testKulture.ref.id );
+					return client.MongoFetchId( testKulture.ref.id );
+				} )
+				.then( ( kulture ) => {
+					debug( "successfully fetched: ", kulture );
+					expect( kulture ).not.to.be.null;
+					expect( kulture.ref.id ).to.equal( testKulture.ref.id );
+				} )
+				.catch( ( error ) => {
+					debug( "Caught error: ", error );
+					expect( error ).to.be.null; // force fail
+				} )
+				.finally( () => { done(); } )
+		} );
+		it( "returns on error on attempt to insert existing id", function( done ) {
+			client.MongoInsertKulture( testKulture )
+				.then( ( id ) => {
+					debug( "successfully inserted: ", id );
+					expect( id ).to.equal( testKulture.ref.id );
+					// if successful try the same insert again
+					return client.MongoInsertKulture( testKulture );
+				} )
+				.then( ( kulture ) => {
+					debug( "success when error expected on duplicate insert" );
+					expect( result ).to.be.null; // force fail				
+				})
+				.catch( ( error ) => {
+					debug( "Caught (expected) error: ", error );
+					expect( error ).not.to.be.null;
+					expect( error ).to.equal( 'duplicate id' );
+				} )
+				.finally( () => { done(); } )
+		} );
+		it("handles mongo connection errors on insert", function( done ) {
+			let mockClient = GetConnectErrorClient( "mongodb://it.dont.matter" );
+			mockClient.MongoInsertKulture( testKulture )
+				.then( ( result ) => {
+					debug( "Promise fulfilled. Not sure why: ", result );
+					expect( result ).to.be.null; // force fail
+					done();
+				} )
+				.catch( ( error ) => {
+					debug( "Caught (expected) error: ", error );
+					expect( error ).not.to.be.null;
+					expect( error ).to.equal( "MongoDb error code: -1" );
+					done();
+				} );
+		} );
 	} );
-	it("inserts a record", function( done ) {
-		client.MongoInsertKulture( testKulture )
-			.then( ( id ) => {
-				debug( "successfully inserted: ", id );
-				expect( id ).toBe( testKulture.ref.id );
-				return client.MongoFetchId( testKulture.ref.id );
-			} )
-			.then( ( kulture ) => {
-				debug( "successfully fetched: ", kulture );
-				expect( kulture ).toBeTruthy();
-				expect( kulture.ref.id ).toBe( testKulture.ref.id );
-			} )
-			.catch( ( error ) => {
-				debug( "Caught error: ", error );
-				expect( error ).toBeNull(); // force fail
-			} )
-			.finally( () => { done(); } )
-	} );
-	it( "returns on error on attempt to insert existing id", function( done ) {
-		client.MongoInsertKulture( testKulture )
-			.then( ( id ) => {
-				debug( "successfully inserted: ", id );
-				expect( id ).toBe( testKulture.ref.id );
-				// if successful try the same insert again
-				return client.MongoInsertKulture( testKulture );
-			} )
-			.then( ( kulture ) => {
-				debug( "success when error expected on duplicate insert" );
-				expect( result ).toBeNull(); // force fail				
-			})
-			.catch( ( error ) => {
-				debug( "Caught (expected) error: ", error );
-				expect( error ).toBeTruthy();
-				expect( error ).toBe( 'duplicate id' );
-			} )
-			.finally( () => { done(); } )
-	} );
-	it("handles mongo connection errors on insert", function( done ) {
-		let mockClient = GetConnectErrorClient( "mongodb://it.dont.matter" );
-		mockClient.MongoInsertKulture( testKulture )
-			.then( ( result ) => {
-				debug( "Promise fulfilled. Not sure why: ", result );
-				expect( result ).toBeNull(); // force fail
-				done();
-			} )
-			.catch( ( error ) => {
-				debug( "Caught (expected) error: ", error );
-				expect( error ).toBeTruthy();
-				expect( error ).toBe( "MongoDb error code: -1" );
-				done();
-			} );
-	} );
-} );
 
-describe( "With Mongodb running, DBAccess MongoDeleteKulture", function() {
-	let client;
-	let beforeCnt = 1;
-	beforeEach( function() {
-		debug( "++++++++\n@beforeEach case #" + beforeCnt++ );
-		client = new DB.DbAccess( "mongodb://localhost" );
-		MongoClean( testKultureCollection )
-			.then( ( result ) => {
-				debug( "@beforeEach - MongoClean returned: ", result );
-			});
-	} );
-	it( "can delete the preloaded record" , function( done ) {
-		MongoAdd( testKulture )
-			.then( () => {
-				return client.MongoDeleteKulture( testKulture.ref.id ); 
-			} )
-			.then( ( id ) => {
-				debug( "successfully deleted: ", testKulture.ref.id );
-				expect( id ).toBeTruthy();
-				expect( id).toBe( testKulture.ref.id );
-			} )
-			.catch( ( error ) => {
-				debug( "Caught error: ", error );
-				expect( error ).toBeNull(); // force fail
-			} )
-			.finally( () => { 
-				debug( "...finally!" );
-				done(); 
-			} );
-	} );	
+	describe( "DBAccess MongoDeleteKulture", function() {
+		it( "can delete the preloaded record" , function( done ) {
+			MongoAdd( testKulture )
+				.then( () => {
+					return client.MongoDeleteKulture( testKulture.ref.id ); 
+				} )
+				.then( ( id ) => {
+					debug( "successfully deleted: ", testKulture.ref.id );
+					expect( id ).not.to.be.null;
+					expect( id).to.equal( testKulture.ref.id );
+				} )
+				.catch( ( error ) => {
+					debug( "Caught error: ", error );
+					expect( error ).to.be.null; // force fail
+				} )
+				.finally( () => { 
+					debug( "...finally!" );
+					done(); 
+				} );
+		} );	
 
-	it("handles mongo connection errors on delete", function( done ) {
-		let mockClient = GetConnectErrorClient( "mongodb://it.dont.matter" );
-		mockClient.MongoDeleteKulture( "dummy ID" )
-			.then( ( result ) => {
-				debug( "Promise fulfilled. Not sure why: ", result );
-				expect( result ).toBeNull(); // force fail
-				done();
-			} )
-			.catch( ( error ) => {
-				debug( "Caught (expected) error: ", error );
-				expect( error ).toBeTruthy();
-				expect( error ).toBe( "MongoDb error code: -1" );
-				done();
-			} );
+		it("handles mongo connection errors on delete", function( done ) {
+			let mockClient = GetConnectErrorClient( "mongodb://it.dont.matter" );
+			mockClient.MongoDeleteKulture( "dummy ID" )
+				.then( ( result ) => {
+					debug( "Promise fulfilled. Not sure why: ", result );
+					expect( result ).to.be.null; // force fail
+					done();
+				} )
+				.catch( ( error ) => {
+					debug( "Caught (expected) error: ", error );
+					expect( error ).not.to.be.null;
+					expect( error ).to.equal( "MongoDb error code: -1" );
+					done();
+				} );
+		} );
 	} );
-} );
 
-describe( "With Mongodb running, DBAccess MongoFetchId", function() {
-	let client;
-	let beforeCnt = 1;
-	beforeEach( function() {
-		debug( "++++++++\n@beforeEach case #" + beforeCnt++ );
-		client = new DB.DbAccess( "mongodb://localhost" );
-		MongoClean( testKultureCollection )
-			.then( ( result ) => {
-				debug( "@beforeEach - MongoClean returned: ", result );
-			});
-	} );
-	it( "can fetch the preloaded record" , function( done ) {
-		MongoAdd( testKulture )
-			.then( () => {
-				return client.MongoFetchId( testKulture.ref.id ); 
-			} )
-			.then( ( kulture ) => {
-				debug( "successfully fetched: ", kulture );
-				expect( kulture ).toBeTruthy();
-				expect( kulture.ref.id ).toBe( testKulture.ref.id );
-			} )
-			.catch( ( error ) => {
-				debug( "Caught error: ", error );
-				expect( error ).toBeNull(); // force fail
-			} )
-			.finally( () => { 
-				debug( "...finally!" );
-				done(); 
-			} );
-	} );	
-	it("handles a missing record", function( done ) {
-		client.MongoFetchId( '0' )
-			.then( ( kulture ) => {
-				debug( "successfully fetched: ", kulture );
-				expect( kulture ).toBeTruthy();
-				expect( _.isEmpty( kulture ) ).toBe( true );
-			} )
-			.catch( ( error ) => {
-				debug( "Caught error: ", error );
-				expect( error ).toBeNull(); // force fail
-			} )
-			.finally( () => { done(); } )
-	} );
-	it("handles mongo connection errors on fetch", function( done ) {
-		let mockClient = GetConnectErrorClient( "mongodb://it.dont.matter" );
-		mockClient.MongoFetchId( "dummy ID" )
-			.then( ( result ) => {
-				debug( "Promise fulfilled. Not sure why: ", result );
-				expect( result ).toBeNull(); // force fail
-				done();
-			} )
-			.catch( ( error ) => {
-				debug( "Caught (expected) error: ", error );
-				expect( error ).toBeTruthy();
-				expect( error ).toBe( "MongoDb error code: -1" );
-				done();
-			} );
+	describe( "DBAccess MongoFetchId", function() {
+		it( "can fetch the preloaded record" , function( done ) {
+			MongoAdd( testKulture )
+				.then( () => {
+					return client.MongoFetchId( testKulture.ref.id ); 
+				} )
+				.then( ( kulture ) => {
+					debug( "successfully fetched: ", kulture );
+					expect( kulture ).not.to.be.null;
+					expect( kulture.ref.id ).to.equal( testKulture.ref.id );
+				} )
+				.catch( ( error ) => {
+					debug( "Caught error: ", error );
+					expect( error ).to.be.null; // force fail
+				} )
+				.finally( () => { 
+					debug( "...finally!" );
+					done(); 
+				} );
+		} );	
+		it("handles a missing record", function( done ) {
+			client.MongoFetchId( '0' )
+				.then( ( kulture ) => {
+					debug( "successfully fetched: ", kulture );
+					expect( kulture ).not.to.be.null;
+					expect( _.isEmpty( kulture ) ).to.equal( true );
+				} )
+				.catch( ( error ) => {
+					debug( "Caught error: ", error );
+					expect( error ).to.be.null; // force fail
+				} )
+				.finally( () => { done(); } )
+		} );
+		it("handles mongo connection errors on fetch", function( done ) {
+			let mockClient = GetConnectErrorClient( "mongodb://it.dont.matter" );
+			mockClient.MongoFetchId( "dummy ID" )
+				.then( ( result ) => {
+					debug( "Promise fulfilled. Not sure why: ", result );
+					expect( result ).to.be.null; // force fail
+					done();
+				} )
+				.catch( ( error ) => {
+					debug( "Caught (expected) error: ", error );
+					expect( error ).not.to.be.null;
+					expect( error ).to.equal( "MongoDb error code: -1" );
+					done();
+				} );
+		} );
 	} );
 } );
 
@@ -266,53 +252,63 @@ describe( "GetKultureById", function() {
 	beforeEach( function() {
 		db = new DB.DbAccess("mongodb://dummy" );
 		dao = new DB.DAO( db );
-		expect( dao ).toBeTruthy();
-		expect( dao.db ).toBe( db );
+		expect( dao ).not.to.be.null;
+		expect( dao.db ).to.equal( db );
 	} );
 	it( "fulfills on success", function(done) {
 		spyOn( DB.DbAccess.prototype, "MongoFetchId" ).andReturn( Promise.resolve( testKulture ) );
 		dao.GetKultureById( testKulture.ref.id )
 			.then( ( kulture ) => {
 				debug( "Promise fulfilled with payload: ", kulture );
-				expect( kulture ).toBeTruthy();
-				expect( kulture ).toBe( testKulture );
+				expect( kulture ).not.to.be.null;
+				expect( kulture ).to.equal( testKulture );
 				done();
 			} )
 			.catch( ( error ) => {
 				debug( "Caught error: ", error );
-				expect( error ).toBeNull(); // force fail
+				expect( error ).to.be.null; // force fail
 				done();
 			} );
 	} );	
-	it( "rejects on id not found in collection", function(done) {
-		spyOn( DB.DbAccess.prototype, "MongoFetchId" ).andReturn( Promise.resolve( { } ) );
-		dao.GetKultureById( 'homeless id' )
+	it.only( "rejects on id not found in collection", function( ) {
+		//let = mfiStub = sinon.stub( DB.DbAccess.prototype, "MongoFetchId" ).returns( Promise.resolve( { foo: 0 } ) );
+		let = mfiStub = sinon.stub( DB.DbAccess.prototype, "MongoFetchId" ).returns( Promise.resolve( { } ) );
+		let result = dao.GetKultureById( 'it matters not' );
+		return expect( result ).to.eventually.equal( 'id not found' );
+		//dao.GetKultureById( 'it matters not' ).should.eventually.not.be.fulfilled();
+		//expect( result ).to.be.rejected( 'id not found' ).notify( done );
+		//		spyOn( DB.DbAccess.prototype, "MongoFetchId" ).andReturn( Promise.resolve( { } ) );
+/*		dao.GetKultureById( 'homeless id' )
 			.then( ( result ) => {
 				debug( "Promise fulfilled with payload: ", result );
-				expect( result ).toBeNull();
+				expect( result ).to.be.null;
 				done();
 			} )
 			.catch( ( error ) => {
 				debug( "Caught (expected) error: ", error );
-				expect( error ).toBeTruthy();
-				expect( error.message ).toBe( 'id not found' );
-				expect( error.id ).toBe( 'homeless id' );
+				expect( error ).not.to.be.null;
+				expect( error.message ).to.equal( 'id not found' );
+				expect( error.id ).to.equal( 'homeless id' );
 				done();
-			} );
+			} )
+			.finally( () => {
+				debug( "Finally done() called" );
+				done();
+			} ); */
 	} );
 	it( "gracefully fails null id", function(done) {
 		//spyOn( DB.DbAccess.prototype, "MongoFetchId" ).andReturn( Promise.reject( "null id" ) );
 		dao.GetKultureById( null )
 			.then( ( result ) => {
 				debug( "Promise fulfilled. Not sure why: ", result );
-				expect( result ).toBeNull(); // force fail
+				expect( result ).to.be.null; // force fail
 				done();
 			} )
 			.catch( ( error ) => {
 				debug( "Caught (expected) error: ", error );
-				expect( error ).toBeTruthy();
-				expect( error.message ).toBe( 'id argument is null' );
-				expect( error.id ).toBe( 'none' );
+				expect( error ).not.to.be.null;
+				expect( error.message ).to.equal( 'id argument is null' );
+				expect( error.id ).to.equal( 'none' );
 				done();
 			} );
 	} );
@@ -323,8 +319,8 @@ describe( "InsertKulture", function() {
 	beforeEach( function() {
 		db = new DB.DbAccess("mongodb://dummy" );
 		dao = new DB.DAO( db );
-		expect( dao ).toBeTruthy();
-		expect( dao.db ).toBe( db );
+		expect( dao ).not.to.be.null;
+		expect( dao.db ).to.equal( db );
 	} );
 	it( "fulfills on success", function(done) {
 		spyOn( DB.DbAccess.prototype, "MongoInsertKulture" ).andCallFake( ( kulture ) => {
@@ -334,13 +330,13 @@ describe( "InsertKulture", function() {
 			.then( ( result ) => {
 				debug( "Promise fulfilled with payload: ", result );
 				expect( DB.DbAccess.prototype.MongoInsertKulture ).toHaveBeenCalled();
-				expect( result ).toBeTruthy();
-				expect( result ).toBe( testKulture.ref.id );
+				expect( result ).not.to.be.null;
+				expect( result ).to.equal( testKulture.ref.id );
 				done();
 			} )
 			.catch( ( error ) => {
 				debug( "Caught error: ", error );
-				expect( error ).toBeNull(); // force fail
+				expect( error ).to.be.null; // force fail
 				done();
 			} );
 	} );
@@ -352,14 +348,14 @@ describe( "InsertKulture", function() {
 		dao.InsertKulture( testKulture )
 			.then( ( result ) => {
 				debug( "Promise fulfilled. Not sure why: ", result );
-				expect( result ).toBeNull(); // force fail
+				expect( result ).to.be.null; // force fail
 				done();
 			} )
 			.catch( ( error ) => {
-				expect( error ).toBeTruthy();
+				expect( error ).not.to.be.null;
 				debug( "Caught (expected) error: ", error );
-				expect( error.message ).toBe( 'insert failure' );
-				expect( error.id ).toBe( testKulture.ref.id );
+				expect( error.message ).to.equal( 'insert failure' );
+				expect( error.id ).to.equal( testKulture.ref.id );
 				done();
 			} );
 	} );
@@ -367,14 +363,14 @@ describe( "InsertKulture", function() {
 		dao.InsertKulture( null )
 			.then( ( result ) => {
 				debug( "Promise fulfilled. Not sure why: ", result );
-				expect( result ).toBeNull(); // force fail
+				expect( result ).to.be.null; // force fail
 				done();
 			} )
 			.catch( ( error ) => {
-				expect( error ).toBeTruthy();
+				expect( error ).not.to.be.null;
 				debug( "Caught (expected) error: ", error );
-				expect( error.message ).toBe( 'kulture argument is null' );
-				expect( error.id ).toBe( 'none' );
+				expect( error.message ).to.equal( 'kulture argument is null' );
+				expect( error.id ).to.equal( 'none' );
 				done();
 			} );
 	} );
@@ -385,8 +381,8 @@ describe( "DeleteKultureById", function() {
 	beforeEach( function() {
 		db = new DB.DbAccess("mongodb://dummy" );
 		dao = new DB.DAO( db );
-		expect( dao ).toBeTruthy();
-		expect( dao.db ).toBe( db );
+		expect( dao ).not.to.be.null;
+		expect( dao.db ).to.equal( db );
 	} );
 	it( "fulfills on success", function(done) {
 		spyOn( DB.DbAccess.prototype, "MongoDeleteKulture" ).andReturn( Promise.resolve( testKulture.ref.id ) );
@@ -394,13 +390,13 @@ describe( "DeleteKultureById", function() {
 			.then( ( result ) => {
 				debug( "Promise fulfilled with payload: ", result );
 				expect( DB.DbAccess.prototype.MongoDeleteKulture ).toHaveBeenCalled();
-				expect( result ).toBeTruthy();
-				expect( result ).toBe( testKulture.ref.id );
+				expect( result ).not.to.be.null;
+				expect( result ).to.equal( testKulture.ref.id );
 				done();
 			} )
 			.catch( ( error ) => {
 				debug( "Caught error: ", error );
-				expect( error ).toBeNull(); // force fail
+				expect( error ).to.be.null; // force fail
 				done();
 			} );
 	} );	
@@ -409,14 +405,14 @@ describe( "DeleteKultureById", function() {
 		dao.DeleteKultureById( 'homeless id' )
 			.then( ( result ) => {
 				debug( "Promise fulfilled with payload: ", result );
-				expect( result ).toBeNull();
+				expect( result ).to.be.null;
 				done();
 			} )
 			.catch( ( error ) => {
 				debug( "Caught (expected) error: ", error );
-				expect( error ).toBeTruthy();
-				expect( error.message ).toBe( 'id not found' );
-				expect( error.id ).toBe( 'homeless id' );
+				expect( error ).not.to.be.null;
+				expect( error.message ).to.equal( 'id not found' );
+				expect( error.id ).to.equal( 'homeless id' );
 				done();
 			} );
 	} );
@@ -424,14 +420,14 @@ describe( "DeleteKultureById", function() {
 		dao.DeleteKultureById( null )
 			.then( ( result ) => {
 				debug( "Promise fulfilled. Not sure why: ", result );
-				expect( result ).toBeNull(); // force fail
+				expect( result ).to.be.null; // force fail
 				done();
 			} )
 			.catch( ( error ) => {
 				debug( "Caught (expected) error: ", error );
-				expect( error ).toBeTruthy();
-				expect( error.message ).toBe( 'id argument is null' );
-				expect( error.id ).toBe( 'none' );
+				expect( error ).not.to.be.null;
+				expect( error.message ).to.equal( 'id argument is null' );
+				expect( error.id ).to.equal( 'none' );
 				done();
 			} );
 	} );
