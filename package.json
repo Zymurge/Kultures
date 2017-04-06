@@ -4,13 +4,14 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
-    "pretest": "start spec\\start_mock_server.cmd && timeout 3",
-    "test": "jasmine-node spec",
-    "test-dao": "jasmine-node spec\\dao_spec.js",
-    "cover": "istanbul cover --include-all-sources node_modules\\jasmine-node\\bin\\jasmine-node spec && start coverage\\lcov-report\\index.html",
-    "cover-kluster": "istanbul cover --include-all-sources node_modules\\jasmine-node\\bin\\jasmine-node spec\\kluster_spec.js && start coverage\\lcov-report\\Kultures\\bin\\index.html",
-    "cover-kulture": "istanbul cover --include-all-sources node_modules\\jasmine-node\\bin\\jasmine-node spec\\kulture_spec.js && start coverage\\lcov-report\\Kultures\\bin\\index.html",
-    "cover-dao": "istanbul cover --include-all-sources node_modules\\jasmine-node\\bin\\jasmine-node spec\\dao_spec.js && start coverage\\lcov-report\\Kultures\\bin\\index.html"
+    "startserver": "start spec\\start_mock_server.cmd && timeout 3",
+    "test": "./node_modules/.bin/mocha spec",
+    "j-test": "jasmine-node spec",
+    "j-test-dao": "jasmine-node spec\\dao_spec.js",
+    "j-cover": "istanbul cover --include-all-sources node_modules\\jasmine-node\\bin\\jasmine-node spec && start coverage\\lcov-report\\index.html",
+    "j-cover-kluster": "istanbul cover --include-all-sources node_modules\\jasmine-node\\bin\\jasmine-node spec\\kluster_spec.js && start coverage\\lcov-report\\Kultures\\bin\\index.html",
+    "j-cover-kulture": "istanbul cover --include-all-sources node_modules\\jasmine-node\\bin\\jasmine-node spec\\kulture_spec.js && start coverage\\lcov-report\\Kultures\\bin\\index.html",
+    "j-cover-dao": "istanbul cover --include-all-sources node_modules\\jasmine-node\\bin\\jasmine-node spec\\dao_spec.js && start coverage\\lcov-report\\Kultures\\bin\\index.html"
   },
   "dependencies": {
     "body-parser": "~1.13.2",
@@ -19,24 +20,20 @@
     "debug": "~2.2.0",
     "express": "~4.13.1",
     "is-my-json-valid": "^2.13.1",
-    "istanbul": "^0.4.5",
     "jade": "~1.11.0",
-    "jasmine-node": "^1.14.5",
     "mongodb": "^2.2.10",
     "morgan": "~1.6.1",
     "promise": "^7.1.1",
     "rsvp": "^3.2.1",
-    "serve-favicon": "~2.3.0",
-    "sinon": "^1.17.4"
+    "serve-favicon": "~2.3.0"
   },
   "devDependencies": {
     "chai": "~3.5.0",
     "chai-as-promised": "^6.0.0",
-    "frisby": "^0.8.5",
-    "jasmine": "^2.4.1",
-    "jasmine-json": "0.0.3",
+    "istanbul": "^0.4.5",
     "mocha": "~3.2.0",
     "nodemon": "",
-    "sinon": "^1.17.7"
+    "sinon": "^1.17.7",
+    "sinon-as-promised": "^4.0.3"
   }
 }

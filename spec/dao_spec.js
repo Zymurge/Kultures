@@ -3,7 +3,9 @@ let debug = require('debug')('test:DAO');
 let MongoClient = require('mongodb').MongoClient;
 let Promise = require( 'promise' );
 let _ = require( 'underscore' );
+
 let sinon = require( 'sinon' );
+require( 'sinon-as-promised' );
 
 let chai = require( 'chai' );
 let chaiAsPromised = require( 'chai-as-promised' );
@@ -247,57 +249,56 @@ describe( "With Mongodb running", function() {
 	} );
 } );
 
-describe( "GetKultureById", function() {
+describe.only( "GetKultureById", function() {
 	let db, dao;
+	let mfiStub = sinon.stub( DB.DbAccess.prototype, "MongoFetchId" );
 	beforeEach( function() {
 		db = new DB.DbAccess("mongodb://dummy" );
 		dao = new DB.DAO( db );
 		expect( dao ).not.to.be.null;
 		expect( dao.db ).to.equal( db );
 	} );
-	it( "fulfills on success", function(done) {
-		spyOn( DB.DbAccess.prototype, "MongoFetchId" ).andReturn( Promise.resolve( testKulture ) );
+	it( "fulfills on success", function( done ) {
+		mfiStub.returns( Promise.resolve( testKulture ) );
 		dao.GetKultureById( testKulture.ref.id )
 			.then( ( kulture ) => {
 				debug( "Promise fulfilled with payload: ", kulture );
 				expect( kulture ).not.to.be.null;
 				expect( kulture ).to.equal( testKulture );
-				done();
 			} )
 			.catch( ( error ) => {
 				debug( "Caught error: ", error );
 				expect( error ).to.be.null; // force fail
+			} )
+			.finally( () => {
+				debug( "Finally done() called" );
 				done();
-			} );
+			} ); 
 	} );	
-	it.only( "rejects on id not found in collection", function( ) {
-		//let = mfiStub = sinon.stub( DB.DbAccess.prototype, "MongoFetchId" ).returns( Promise.resolve( { foo: 0 } ) );
-		let = mfiStub = sinon.stub( DB.DbAccess.prototype, "MongoFetchId" ).returns( Promise.resolve( { } ) );
-		let result = dao.GetKultureById( 'it matters not' );
-		return expect( result ).to.eventually.equal( 'id not found' );
+	it( "rejects on id not found in collection", function( done ) {
+		mfiStub.returns( Promise.resolve( { } ) );
+		dao.GetKultureById( 'it matters not' )
 		//dao.GetKultureById( 'it matters not' ).should.eventually.not.be.fulfilled();
 		//expect( result ).to.be.rejected( 'id not found' ).notify( done );
 		//		spyOn( DB.DbAccess.prototype, "MongoFetchId" ).andReturn( Promise.resolve( { } ) );
-/*		dao.GetKultureById( 'homeless id' )
+/*		dao.GetKultureById( 'homeless id' ) */
 			.then( ( result ) => {
-				debug( "Promise fulfilled with payload: ", result );
+				debug( "Promise fulfilled. Not sure why: ", result );
 				expect( result ).to.be.null;
-				done();
 			} )
 			.catch( ( error ) => {
 				debug( "Caught (expected) error: ", error );
 				expect( error ).not.to.be.null;
 				expect( error.message ).to.equal( 'id not found' );
 				expect( error.id ).to.equal( 'homeless id' );
-				done();
 			} )
 			.finally( () => {
 				debug( "Finally done() called" );
 				done();
-			} ); */
+			} ); 
 	} );
 	it( "gracefully fails null id", function(done) {
-		//spyOn( DB.DbAccess.prototype, "MongoFetchId" ).andReturn( Promise.reject( "null id" ) );
+		mfiStub.resetBehavior();
 		dao.GetKultureById( null )
 			.then( ( result ) => {
 				debug( "Promise fulfilled. Not sure why: ", result );
