@@ -2,18 +2,24 @@ let sinon = require('sinon');
 let GenError = require( '../bin/utils' ).GenerateErrorJSON;
 let debug = require('debug')('utils:test');
 
+let chai = require('chai');
+let chaiAsPromised = require('chai-as-promised');
+chai.use(chaiAsPromised);
+let expect = chai.expect;
+let should = chai.should;
+
 describe( "GenerateErrorJSON function", function() {
 	it( "generates a valid error message", function(done) {
 		myId = 'fud';
 		myApi = 'culprit';
 		myMessage = 'So broken';
 		result = GenError( myId, myApi, myMessage );
-		expect( result ).not.toBe( null );
-		expect( result.error ).not.toBe( null );
-		expect( result.error ).toEqual( jasmine.objectContaining({ id: myId }));
-		expect( result.error ).toEqual( jasmine.objectContaining({ api: myApi }));
-		expect( result.error ).toEqual( jasmine.objectContaining({ message: myMessage }));
-		expect( result ).toEqualJson( testMessage );
+        expect(result).ok;
+        expect( result ).to.have.property( 'error' );
+        expect( result.error ).to.include({ id: myId });
+		expect( result.error ).to.include({ api: myApi });
+		expect( result.error ).to.include({ message: myMessage });
+        expect( JSON.stringify(result) ).to.equal( JSON.stringify(testMessage ));
 		done();
 	})
 });

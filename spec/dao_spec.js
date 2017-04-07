@@ -249,7 +249,7 @@ describe( "With Mongodb running", function() {
 	} );
 } );
 
-describe.only( "GetKultureById", function() {
+describe( "GetKultureById", function() {
 	let db, dao;
 	let mfiStub = sinon.stub( DB.DbAccess.prototype, "MongoFetchId" );
 	beforeEach( function() {
@@ -258,9 +258,9 @@ describe.only( "GetKultureById", function() {
 		expect( dao ).not.to.be.null;
 		expect( dao.db ).to.equal( db );
 	} );
-	it( "fulfills on success", function( done ) {
+	it( "fulfills on success", function() {
 		mfiStub.returns( Promise.resolve( testKulture ) );
-		dao.GetKultureById( testKulture.ref.id )
+		return dao.GetKultureById( testKulture.ref.id )
 			.then( ( kulture ) => {
 				debug( "Promise fulfilled with payload: ", kulture );
 				expect( kulture ).not.to.be.null;
@@ -269,19 +269,15 @@ describe.only( "GetKultureById", function() {
 			.catch( ( error ) => {
 				debug( "Caught error: ", error );
 				expect( error ).to.be.null; // force fail
-			} )
+/*			} )
 			.finally( () => {
 				debug( "Finally done() called" );
 				done();
-			} ); 
+*/			} ); 
 	} );	
-	it( "rejects on id not found in collection", function( done ) {
+	it( "rejects on id not found in collection", function() {
 		mfiStub.returns( Promise.resolve( { } ) );
-		dao.GetKultureById( 'it matters not' )
-		//dao.GetKultureById( 'it matters not' ).should.eventually.not.be.fulfilled();
-		//expect( result ).to.be.rejected( 'id not found' ).notify( done );
-		//		spyOn( DB.DbAccess.prototype, "MongoFetchId" ).andReturn( Promise.resolve( { } ) );
-/*		dao.GetKultureById( 'homeless id' ) */
+		return dao.GetKultureById( 'homeless id' )
 			.then( ( result ) => {
 				debug( "Promise fulfilled. Not sure why: ", result );
 				expect( result ).to.be.null;
@@ -291,145 +287,131 @@ describe.only( "GetKultureById", function() {
 				expect( error ).not.to.be.null;
 				expect( error.message ).to.equal( 'id not found' );
 				expect( error.id ).to.equal( 'homeless id' );
-			} )
+/*			} )
 			.finally( () => {
 				debug( "Finally done() called" );
 				done();
-			} ); 
+*/			} ); 
 	} );
-	it( "gracefully fails null id", function(done) {
+	it( "gracefully fails null id", function() {
 		mfiStub.resetBehavior();
-		dao.GetKultureById( null )
+		return dao.GetKultureById( null )
 			.then( ( result ) => {
 				debug( "Promise fulfilled. Not sure why: ", result );
 				expect( result ).to.be.null; // force fail
-				done();
+				//done();
 			} )
 			.catch( ( error ) => {
 				debug( "Caught (expected) error: ", error );
 				expect( error ).not.to.be.null;
 				expect( error.message ).to.equal( 'id argument is null' );
 				expect( error.id ).to.equal( 'none' );
-				done();
+				//done();
 			} );
 	} );
 } );
 
 describe( "InsertKulture", function() {
 	let db, dao;
+	let mikStub = sinon.stub( DB.DbAccess.prototype, "MongoInsertKulture" );
 	beforeEach( function() {
 		db = new DB.DbAccess("mongodb://dummy" );
 		dao = new DB.DAO( db );
 		expect( dao ).not.to.be.null;
 		expect( dao.db ).to.equal( db );
 	} );
-	it( "fulfills on success", function(done) {
-		spyOn( DB.DbAccess.prototype, "MongoInsertKulture" ).andCallFake( ( kulture ) => {
-			return Promise.resolve( kulture.ref.id );
-		} );
-		dao.InsertKulture( testKulture )
+	it( "fulfills on success", function() {		
+		mikStub.returns( Promise.resolve( "this should fail" ) );
+		mikStub.returns( Promise.resolve( testKulture.ref.id ) );
+		return dao.InsertKulture( testKulture )
 			.then( ( result ) => {
 				debug( "Promise fulfilled with payload: ", result );
-				expect( DB.DbAccess.prototype.MongoInsertKulture ).toHaveBeenCalled();
 				expect( result ).not.to.be.null;
 				expect( result ).to.equal( testKulture.ref.id );
-				done();
 			} )
 			.catch( ( error ) => {
 				debug( "Caught error: ", error );
 				expect( error ).to.be.null; // force fail
-				done();
-			} );
+			} ); 
 	} );
-	it( "informs of insert failure", function(done) {
-		spyOn( DB.DbAccess.prototype, "MongoInsertKulture" ).andCallFake( ( kulture ) => {
-			let err = { id: kulture.ref.id, message: "insert failure" };
-			return Promise.reject( err );
-		} );
-		dao.InsertKulture( testKulture )
+	it( "informs of insert failure", function() {
+		let err = { id: testKulture.ref.id, message: "insert failure" };
+		mikStub.rejects( err );
+		return dao.InsertKulture( testKulture )
 			.then( ( result ) => {
 				debug( "Promise fulfilled. Not sure why: ", result );
 				expect( result ).to.be.null; // force fail
-				done();
 			} )
 			.catch( ( error ) => {
 				expect( error ).not.to.be.null;
 				debug( "Caught (expected) error: ", error );
 				expect( error.message ).to.equal( 'insert failure' );
 				expect( error.id ).to.equal( testKulture.ref.id );
-				done();
 			} );
 	} );
-	it( "gracefully fails null kulture", function(done) {
-		dao.InsertKulture( null )
+	it( "gracefully fails null kulture", function() {
+		mikStub.resetBehavior();
+		return dao.InsertKulture( null )
 			.then( ( result ) => {
 				debug( "Promise fulfilled. Not sure why: ", result );
 				expect( result ).to.be.null; // force fail
-				done();
 			} )
 			.catch( ( error ) => {
 				expect( error ).not.to.be.null;
 				debug( "Caught (expected) error: ", error );
 				expect( error.message ).to.equal( 'kulture argument is null' );
 				expect( error.id ).to.equal( 'none' );
-				done();
 			} );
 	} );
 } );
 
 describe( "DeleteKultureById", function() {
-	let db, dao;
-	beforeEach( function() {
-		db = new DB.DbAccess("mongodb://dummy" );
-		dao = new DB.DAO( db );
-		expect( dao ).not.to.be.null;
-		expect( dao.db ).to.equal( db );
-	} );
-	it( "fulfills on success", function(done) {
-		spyOn( DB.DbAccess.prototype, "MongoDeleteKulture" ).andReturn( Promise.resolve( testKulture.ref.id ) );
-		dao.DeleteKultureById( testKulture.ref.id )
+    let db, dao;
+    let mdkStub = sinon.stub(DB.DbAccess.prototype, "MongoDeleteKulture");
+    beforeEach(function () {
+        db = new DB.DbAccess("mongodb://dummy");
+        dao = new DB.DAO(db);
+        expect(dao).not.to.be.null;
+        expect(dao.db).to.equal(db);
+    });
+	it( "fulfills on success", function() {
+		mdkStub.resolves( testKulture.ref.id );
+		return dao.DeleteKultureById( testKulture.ref.id )
 			.then( ( result ) => {
 				debug( "Promise fulfilled with payload: ", result );
-				expect( DB.DbAccess.prototype.MongoDeleteKulture ).toHaveBeenCalled();
 				expect( result ).not.to.be.null;
 				expect( result ).to.equal( testKulture.ref.id );
-				done();
 			} )
 			.catch( ( error ) => {
 				debug( "Caught error: ", error );
 				expect( error ).to.be.null; // force fail
-				done();
 			} );
 	} );	
-	it( "rejects on id not found in collection", function(done) {
-		spyOn( DB.DbAccess.prototype, "MongoDeleteKulture" ).andReturn( Promise.resolve( { } ) );
-		dao.DeleteKultureById( 'homeless id' )
+	it( "rejects on id not found in collection", function() {
+		mdkStub.resolves( { } );
+		return dao.DeleteKultureById( 'homeless id' )
 			.then( ( result ) => {
 				debug( "Promise fulfilled with payload: ", result );
 				expect( result ).to.be.null;
-				done();
 			} )
 			.catch( ( error ) => {
 				debug( "Caught (expected) error: ", error );
 				expect( error ).not.to.be.null;
 				expect( error.message ).to.equal( 'id not found' );
 				expect( error.id ).to.equal( 'homeless id' );
-				done();
 			} );
 	} );
-	it( "gracefully fails null id", function(done) {
-		dao.DeleteKultureById( null )
+	it( "gracefully fails null id", function() {
+		return dao.DeleteKultureById( null )
 			.then( ( result ) => {
 				debug( "Promise fulfilled. Not sure why: ", result );
 				expect( result ).to.be.null; // force fail
-				done();
 			} )
 			.catch( ( error ) => {
 				debug( "Caught (expected) error: ", error );
 				expect( error ).not.to.be.null;
 				expect( error.message ).to.equal( 'id argument is null' );
 				expect( error.id ).to.equal( 'none' );
-				done();
 			} );
 	} );
 } );

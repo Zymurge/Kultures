@@ -4,6 +4,12 @@ var ValidateThis = require('../bin/kulture_data').ValidateThis;
 var ValidationErrors = require('../bin/kulture_data').ValidationErrors;
 var debug = require( 'debug' )( 'test:kulture' );
 
+let chai = require('chai');
+let chaiAsPromised = require('chai-as-promised');
+chai.use(chaiAsPromised);
+let expect = chai.expect;
+let should = chai.should;
+
 describe( "Test JSON actually is JSON", function() {
 	it( "Can extract items", function(done) {
 		debug( "test_json is type " + typeof test_json );
@@ -17,15 +23,15 @@ describe( "Test JSON actually is JSON", function() {
 describe( "Ctor basics", function() {
 	it( "Properly constructs object", function(done) {
 		let k = new Kulture( test_json );
-		expect( k ).toBeTruthy();
-		expect( typeof k ).toBe( 'object' );
+		expect( k ).not.to.be.null;
+		expect( typeof k ).to.equal( 'object' );
 		done();
 	} );
 	it( "Throws on undefined argument", function(done) {
 		let k = function() {
 			var boom = Kulture( undefined );
 		}
-		expect( k ).toThrow( "called with undefined argument" );
+		expect( k ).to.throw( "called with undefined argument" );
 		done();
 	} );
 	it( "Validates ref node of json", function(done) {
@@ -58,7 +64,7 @@ describe( "Ctor basics", function() {
 		let k = function() {
 			var boom = Kulture( test_json );
 		}
-		expect( k ).toThrow( "Kulture must be called with the new keyword" );
+		expect( k ).to.throw( "Kulture must be called with the new keyword" );
 		done();
 	})
 });
@@ -70,35 +76,35 @@ describe( "accessors expose", function() {
 	} );
 
 	it( "ref property", function(done) {
-		expect( k.ref ).toBeTruthy();
-		expect( k.ref.id ).toBeTruthy();
-		expect( k.ref.id ).toBe( '13' );
+		expect( k.ref ).not.to.be.null;
+		expect( k.ref.id ).not.to.be.null;
+		expect( k.ref.id ).to.equal( '13' );
 		done();
 	} );
 	it( "display property", function(done) {
-		expect( k.display ).toBeTruthy();
-		expect( k.display.loc ).toBeTruthy();
-		expect( k.display.loc.x ).toBeTruthy();
-		expect( k.display.loc.y ).toBeTruthy();
-		expect( k.display.loc.x ).toBe( 1 );
-		expect( k.display.loc.y ).toBe( 2 );
+		expect( k.display ).not.to.be.null;
+		expect( k.display.loc ).not.to.be.null;
+		expect( k.display.loc.x ).not.to.be.null;
+		expect( k.display.loc.y ).not.to.be.null;
+		expect( k.display.loc.x ).to.equal( 1 );
+		expect( k.display.loc.y ).to.equal( 2 );
 		done();
 	} );
 	it( "attributes property", function(done) {
-		expect( k.attributes ).toBeTruthy();
-		expect( k.attributes.growth ).toBeTruthy();
-		expect( k.attributes.growth['factor'] ).toBe( 5 );
+		expect( k.attributes ).not.to.be.null;
+		expect( k.attributes.growth ).not.to.be.null;
+		expect( k.attributes.growth['factor'] ).to.equal( 5 );
 		done();
 	} );
 	it( "status property", function(done) {
-		expect( k.status ).toBeTruthy();
-		expect( k.status.energy ).toBeTruthy();
-		expect( k.status.energy ).toBe( 100 );
+		expect( k.status ).not.to.be.null;
+		expect( k.status.energy ).not.to.be.null;
+		expect( k.status.energy ).to.equal( 100 );
 		done();
 	} );
 	it( "Id property", function(done) {
-		expect( k.Id ).toBeTruthy();
-		expect( k.Id ).toBe( '13' );
+		expect( k.Id ).not.to.be.null;
+		expect( k.Id ).to.equal( '13' );
 		done();
 	} );
 });
@@ -106,14 +112,14 @@ describe( "accessors expose", function() {
 describe( "Validator validation", function() {
 	it( "Proper json", function(done) {
 		var result = ValidateThis( test_json );
-		expect( result ).toBe( true, "wtf?");
+		expect( result ).to.equal( true, "wtf?");
 		done();
 	} );
 	it( "json missing status.health", function(done) {
 		var bad_json = JSON.parse(JSON.stringify(test_json));
 		delete bad_json.status.health;
 		var result = ValidateThis( bad_json );
-		expect( result ).toBe( false, "wtf?");
+		expect( result ).to.equal( false, "wtf?");
 		done();
 	} );
 });
@@ -121,14 +127,14 @@ describe( "Validator validation", function() {
 describe( "IsInvalid function", function() {
 	it( "Returns false (null) on valid JSON", function(done) {
 		var result = ValidationErrors( test_json );
-		expect( result ).toBeNull( "No errors should be null response");
+		expect( result ).to.be.null;
 		done();	
 	});
 	it( "Returns true, with accurate reason, on invalid JSON", function(done) {
 		var bad_json = RemoveNodeFromJSON( test_json, "attributes.growth" );
 		var result = ValidationErrors( bad_json );
-		expect( result ).not.toBeNull( "null response indicates no error" );
-		expect( result.field ).toContain( 'attributes.growth' );
+		expect( result ).not.to.be.null;
+		expect( result.field ).to.contain( 'attributes.growth' );
 		done();	
 	});
 });
@@ -139,7 +145,7 @@ function ExpectJSONValidateToThrow( good_json, deleteNode ) {
 	var bad_json = RemoveNodeFromJSON( good_json, deleteNode );
 	var matchString = "is required: data." + deleteNode;
 	var expectedError = function() { new Kulture( bad_json ) };
-	expect( expectedError ).toThrow( matchString );
+	expect( expectedError ).to.throw( matchString );
 }
 
 function RemoveNodeFromJSON( good_json, deleteNode ) {
