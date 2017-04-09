@@ -379,7 +379,7 @@ describe( "InsertKulture", function() {
 
 } );
 
-describe.only( "DeleteKultureById", function() {
+describe( "DeleteKultureById", function() {
     let db, dao;
     let mdkStub = sinon.stub(mongoDB.DbAccess.prototype, "MongoDeleteKulture");
     beforeEach(function () {

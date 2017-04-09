@@ -1,4 +1,3 @@
-let sinon = require('sinon');
 let GenError = require( '../bin/utils' ).GenerateErrorJSON;
 let debug = require('debug')('utils:test');
 
@@ -9,20 +8,48 @@ let expect = chai.expect;
 let should = chai.should;
 
 describe( "GenerateErrorJSON function", function() {
-	it( "generates a valid error message", function(done) {
-		myId = 'fud';
-		myApi = 'culprit';
-		myMessage = 'So broken';
-		result = GenError( myId, myApi, myMessage );
+    it("generates a valid error message", function (done) {
+        myId = 'fud';
+        myApi = 'culprit';
+        myMessage = 'So broken';
+        result = GenError(myApi, myId, myMessage);
         expect(result).ok;
-        expect( result ).to.have.property( 'error' );
-        expect( result.error ).to.include({ id: myId });
-		expect( result.error ).to.include({ api: myApi });
-		expect( result.error ).to.include({ message: myMessage });
-        expect( JSON.stringify(result) ).to.equal( JSON.stringify(testMessage ));
-		done();
-	})
+        expect(result).to.include({ api: myApi });
+        expect(result).to.include({ id: myId });
+        expect(result).to.include({ message: myMessage });
+        done();
+    });
+    describe("generates correct default values", function() {
+        let myId = 'none';
+        let myApi = 'unspecified';
+        let myMessage = '';
+        let result;
+        afterEach(function (done) {
+            expect(result).ok;
+            expect(result).to.include({ api: myApi });
+            expect(result).to.include({ id: myId });
+            expect(result).to.include({ message: myMessage });
+            done();
+        } );
+        it("when given no args ", function () {
+            result = GenError();
+        });
+        it("when given all null args ", function () {
+            result = GenError(null, null, null);
+        });
+        it("when given a mix of null and valid args", function () {
+            // Warning: global value changed, reset in subsequent cases
+            myId = 'TestId';
+            result = GenError(null,myId);
+        });
+        // Test the tests, given my first time with all validations in the afterEach
+        it.skip("this should fail", function () {
+            result = GenError(null, 'fail me', 'twice' );
+        }); 
+    })
 });
+
+/*** Helpers ***/
 
 var testKulture = {
     ref: {
@@ -49,11 +76,9 @@ var testKulture = {
  };
 
 var testMessage = {
-    error: {
-        id: 'fud',
-        api: 'culprit',
-        message: 'So broken'
-    }
+    api: 'culprit',
+    id: 'fud',
+    message: 'So broken'
 };
 
 function BuildKultureJSON( x, y, z ) {
