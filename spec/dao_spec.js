@@ -1,4 +1,5 @@
-let DB = require( '../bin/dao' );
+let DB = require('../bin/dao');
+let mongoDB = require('../bin/mongoDB');
 let debug = require('debug')('test:DAO');
 let MongoClient = require('mongodb').MongoClient;
 let Promise = require( 'promise' );
@@ -41,7 +42,7 @@ let testKulture = {
 
 describe( "DbAccess constructor", function() {
 	it( "creates values properly with default timeout", function( done ) {
-		let db = new DB.DbAccess( testMongoUrl );
+        let db = new mongoDB.DbAccess( testMongoUrl );
 		expect( db ).not.to.be.null;
 		expect( db.mongoUrl ).to.equal( testMongoUrl );
 		expect( db.connection ).to.be.null;
@@ -49,7 +50,7 @@ describe( "DbAccess constructor", function() {
 		done();
 	} );
 	it( "creates values properly with explicit timeout", function( done ) {
-		let db = new DB.DbAccess( testMongoUrl, 50000 );
+        let db = new mongoDB.DbAccess( testMongoUrl, 50000 );
 		expect( db ).not.to.be.null;
 		expect( db.connectStr ).to.equal( testMongoUrl + "/?connectTimeoutMS=50000" );
 		done();
@@ -57,7 +58,7 @@ describe( "DbAccess constructor", function() {
 	it( "handles url with post-pended /", function( done ) {
 		let pp_url = "mongodb://post-pended_url/";
 		let pp_url_fixed = "mongodb://post-pended_url";
-		let db = new DB.DbAccess( pp_url );
+        let db = new mongoDB.DbAccess( pp_url );
 		expect( db ).not.to.be.null;
 		expect( db.mongoUrl ).to.equal( pp_url_fixed );
 		expect( db.connectStr ).to.equal( pp_url + "?connectTimeoutMS=4000" );
@@ -65,7 +66,7 @@ describe( "DbAccess constructor", function() {
 	} )
 	it( "throws on bad url", function( done ) {
 		let badUrl = "mangled-db://Imabadurl";
-		expect( () => { new DB.DbAccess( badUrl ); } ).to.throw( Error );
+        expect(() => { new mongoDB.DbAccess( badUrl ); } ).to.throw( Error );
 		done();
 	} );
 } );
@@ -77,7 +78,7 @@ describe( "With Mongodb running", function() {
 	beforeEach( function() {
 		debug( "++++++++\n@beforeEach case #" + beforeCnt++ );
 		if( running ) { 
-			client = new DB.DbAccess( "mongodb://localhost" );
+			client = new mongoDB.DbAccess( "mongodb://localhost" );
 			MongoClean( testKultureCollection )
 				.then( ( result ) => {
 					debug( "@beforeEach - MongoClean returned: ", result );
@@ -251,9 +252,9 @@ describe( "With Mongodb running", function() {
 
 describe( "GetKultureById", function() {
 	let db, dao;
-	let mfiStub = sinon.stub( DB.DbAccess.prototype, "MongoFetchId" );
+	let mfiStub = sinon.stub( mongoDB.DbAccess.prototype, "MongoFetchId" );
 	beforeEach( function() {
-		db = new DB.DbAccess("mongodb://dummy" );
+		db = new mongoDB.DbAccess("mongodb://dummy" );
 		dao = new DB.DAO( db );
 		expect( dao ).not.to.be.null;
 		expect( dao.db ).to.equal( db );
@@ -269,11 +270,7 @@ describe( "GetKultureById", function() {
 			.catch( ( error ) => {
 				debug( "Caught error: ", error );
 				expect( error ).to.be.null; // force fail
-/*			} )
-			.finally( () => {
-				debug( "Finally done() called" );
-				done();
-*/			} ); 
+			} ); 
 	} );	
 	it( "rejects on id not found in collection", function() {
 		mfiStub.returns( Promise.resolve( { } ) );
@@ -284,38 +281,48 @@ describe( "GetKultureById", function() {
 			} )
 			.catch( ( error ) => {
 				debug( "Caught (expected) error: ", error );
-				expect( error ).not.to.be.null;
-				expect( error.message ).to.equal( 'id not found' );
-				expect( error.id ).to.equal( 'homeless id' );
-/*			} )
-			.finally( () => {
-				debug( "Finally done() called" );
-				done();
-*/			} ); 
+                ValidateJSONError(error,'GetKultureById','homeless id','id not found');
+			} ); 
 	} );
-	it( "gracefully fails null id", function() {
-		mfiStub.resetBehavior();
-		return dao.GetKultureById( null )
-			.then( ( result ) => {
-				debug( "Promise fulfilled. Not sure why: ", result );
-				expect( result ).to.be.null; // force fail
-				//done();
-			} )
-			.catch( ( error ) => {
-				debug( "Caught (expected) error: ", error );
-				expect( error ).not.to.be.null;
-				expect( error.message ).to.equal( 'id argument is null' );
-				expect( error.id ).to.equal( 'none' );
-				//done();
-			} );
-	} );
+    it("gracefully fails null id", function () {
+        mfiStub.resetBehavior();
+        return dao.GetKultureById(null)
+            .then((result) => {
+                debug("Promise fulfilled. Not sure why: ", result);
+                expect(result).to.be.null; // force fail
+           })
+            .catch((error) => {
+                debug("Caught (expected) error: ", error);
+                ValidateJSONError(error, 'GetKultureById', 'none', 'id argument is null');
+            });
+    });
+    it("gracefully fails DB error", function () {
+        let err = "MongoDB error code: 999999";
+        // Beware: sinin-as-promised rejects method throws an error object that wraps the message
+        //         DAO returns a custom error object with the DB layer's err in the message, so we need to unwrap message.message 
+        //         in this test for correct comparisons
+        mfiStub.rejects(err);
+         return dao.GetKultureById('fail')
+            .then((result) => {
+                debug("Promise fulfilled. Not sure why: ", result);
+                expect(result).to.be.null; // force fail
+            })
+            .catch((error) => {
+                debug( "Caught (expected) error: ", error.message.message );
+                expect(error).ok;
+                expect(error.message).ok;
+                expect(error.message instanceof Error ).to.be.true;
+                expect(error.message.message).to.equal( err );
+                expect(error.id).to.equal('fail');
+            });
+    });
 } );
 
 describe( "InsertKulture", function() {
 	let db, dao;
-	let mikStub = sinon.stub( DB.DbAccess.prototype, "MongoInsertKulture" );
+	let mikStub = sinon.stub( mongoDB.DbAccess.prototype, "MongoInsertKulture" );
 	beforeEach( function() {
-		db = new DB.DbAccess("mongodb://dummy" );
+		db = new mongoDB.DbAccess("mongodb://dummy" );
 		dao = new DB.DAO( db );
 		expect( dao ).not.to.be.null;
 		expect( dao.db ).to.equal( db );
@@ -334,42 +341,49 @@ describe( "InsertKulture", function() {
 				expect( error ).to.be.null; // force fail
 			} ); 
 	} );
-	it( "informs of insert failure", function() {
-		let err = { id: testKulture.ref.id, message: "insert failure" };
-		mikStub.rejects( err );
-		return dao.InsertKulture( testKulture )
-			.then( ( result ) => {
-				debug( "Promise fulfilled. Not sure why: ", result );
-				expect( result ).to.be.null; // force fail
-			} )
-			.catch( ( error ) => {
-				expect( error ).not.to.be.null;
-				debug( "Caught (expected) error: ", error );
-				expect( error.message ).to.equal( 'insert failure' );
-				expect( error.id ).to.equal( testKulture.ref.id );
-			} );
-	} );
-	it( "gracefully fails null kulture", function() {
-		mikStub.resetBehavior();
-		return dao.InsertKulture( null )
-			.then( ( result ) => {
-				debug( "Promise fulfilled. Not sure why: ", result );
-				expect( result ).to.be.null; // force fail
-			} )
-			.catch( ( error ) => {
-				expect( error ).not.to.be.null;
-				debug( "Caught (expected) error: ", error );
-				expect( error.message ).to.equal( 'kulture argument is null' );
-				expect( error.id ).to.equal( 'none' );
-			} );
-	} );
+    it("gracefully fails null kulture arg", function () {
+        mikStub.resetBehavior();
+        return dao.InsertKulture(null)
+            .then((result) => {
+                debug("Promise fulfilled. Not sure why: ", result);
+                expect(result).to.be.null; // force fail
+            })
+            .catch((error) => {
+                debug("Caught (expected) error: ", error);
+                ValidateJSONError(error, 'InsertKulture', 'none', 'kulture argument is null');
+            });
+    });
+    it("gracefully fails DB error", function () {
+        let err = "MongoDB error code: 999999";
+        // Beware: sinin-as-promised rejects method throws an error object that wraps the message
+        //         DAO returns a custom error object with the DB layer's err in the message, so we need to unwrap message.message 
+        //         in this test for correct comparisons
+        mikStub.rejects(err);
+        return dao.InsertKulture( testKulture )
+            .then((result) => {
+                debug("Promise fulfilled. Not sure why: ", result);
+                expect(result).to.be.null; // force fail
+            })
+            .catch((error) => {
+                debug("Caught (expected) error: ", error.message.message);
+                expect(error).ok;
+                expect(error.api).ok;
+                expect(error.api).to.equal( 'InsertKulture' );
+                expect(error.id).ok;
+                expect(error.id).to.equal(testKulture.ref.id);
+                expect(error.message).ok;
+                expect(error.message instanceof Error).to.be.true;
+                expect(error.message.message).to.equal(err);
+            });
+    });
+
 } );
 
-describe( "DeleteKultureById", function() {
+describe.only( "DeleteKultureById", function() {
     let db, dao;
-    let mdkStub = sinon.stub(DB.DbAccess.prototype, "MongoDeleteKulture");
+    let mdkStub = sinon.stub(mongoDB.DbAccess.prototype, "MongoDeleteKulture");
     beforeEach(function () {
-        db = new DB.DbAccess("mongodb://dummy");
+        db = new mongoDB.DbAccess("mongodb://dummy");
         dao = new DB.DAO(db);
         expect(dao).not.to.be.null;
         expect(dao.db).to.equal(db);
@@ -396,9 +410,7 @@ describe( "DeleteKultureById", function() {
 			} )
 			.catch( ( error ) => {
 				debug( "Caught (expected) error: ", error );
-				expect( error ).not.to.be.null;
-				expect( error.message ).to.equal( 'id not found' );
-				expect( error.id ).to.equal( 'homeless id' );
+                ValidateJSONError(error, 'DeleteKultureById', 'homeless id', "kultureId not found");
 			} );
 	} );
 	it( "gracefully fails null id", function() {
@@ -408,12 +420,30 @@ describe( "DeleteKultureById", function() {
 				expect( result ).to.be.null; // force fail
 			} )
 			.catch( ( error ) => {
-				debug( "Caught (expected) error: ", error );
-				expect( error ).not.to.be.null;
-				expect( error.message ).to.equal( 'id argument is null' );
-				expect( error.id ).to.equal( 'none' );
+                debug("Caught (expected) error: ", error);
+                ValidateJSONError(error, 'DeleteKultureById', 'none', "kultureId argument is null");
 			} );
 	} );
+    it("gracefully fails DB error", function () {
+        let err = "MongoDB error code: 999999";
+        // Beware: sinin-as-promised rejects method throws an error object that wraps the message
+        //         DAO returns a custom error object with the DB layer's err in the message, so we need to unwrap message.message 
+        //         in this test for correct comparisons
+        mdkStub.rejects(err);
+        return dao.DeleteKultureById('fail')
+            .then((result) => {
+                debug("Promise fulfilled. Not sure why: ", result);
+                expect(result).to.be.null; // force fail
+            })
+            .catch((error) => {
+                debug("Caught (expected) error: ", error.message.message);
+                expect(error).ok;
+                expect(error.message).ok;
+                expect(error.message instanceof Error).to.be.true;
+                expect(error.message.message).to.equal(err);
+                expect(error.id).to.equal('fail');
+            });
+    });
 } );
 
 /***** Helper functions *****/
@@ -497,10 +527,20 @@ let BuildKultureJSON = function( x, y, z ) {
 }
 
 let GetConnectErrorClient = function( url ) {
-	let myClient = new DB.DbAccess( url );
+	let myClient = new mongoDB.DbAccess( url );
 	myClient.ConnectToMongo = function() {
 		debug( "Fake ConnectToMongo called - rejecting" );
 		return Promise.reject( { name: "MockClient", code: -1, message: "simulated connection error" } );
 	};
 	return myClient;
+}
+
+let ValidateJSONError = function (error, expectedApi, expectedId, expectedMessage) {
+    expect(error, "error object must exist and be populated" ).ok;
+    expect(error.api, "error.api must exist and be populated").ok;
+    expect(error.api).to.equal(expectedApi);
+    expect(error.id, "error.id must exist and be populated" ).ok;
+    expect(error.id).to.equal(expectedId);
+    expect(error.message, "error.message must exist and be populated").ok;
+    expect(error.message).to.equal(expectedMessage);
 }

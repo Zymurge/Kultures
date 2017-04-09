@@ -1,11 +1,11 @@
 module.exports = {
-	GenerateErrorJSON: function( id, api, message ) {
+    GenerateErrorJSON: function (api, id, message ) {
 		var result = {
-		   error: {
-		        id: id,
+		   //error: {
 		        api: api,
+		        id: id,
 		        message: message
-		    }
+		   // }
 		}
 		return result;
 	}

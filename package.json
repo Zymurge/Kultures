@@ -8,10 +8,11 @@
     "test": "./node_modules/.bin/mocha spec",
     "j-test": "jasmine-node spec",
     "j-test-dao": "jasmine-node spec\\dao_spec.js",
+    "cover": "istanbul cover --include-all-sources node_modules\\mocha\\bin\\_mocha spec && start coverage\\lcov-report\\index.html",
     "j-cover": "istanbul cover --include-all-sources node_modules\\jasmine-node\\bin\\jasmine-node spec && start coverage\\lcov-report\\index.html",
     "j-cover-kluster": "istanbul cover --include-all-sources node_modules\\jasmine-node\\bin\\jasmine-node spec\\kluster_spec.js && start coverage\\lcov-report\\Kultures\\bin\\index.html",
     "j-cover-kulture": "istanbul cover --include-all-sources node_modules\\jasmine-node\\bin\\jasmine-node spec\\kulture_spec.js && start coverage\\lcov-report\\Kultures\\bin\\index.html",
-    "j-cover-dao": "istanbul cover --include-all-sources node_modules\\jasmine-node\\bin\\jasmine-node spec\\dao_spec.js && start coverage\\lcov-report\\Kultures\\bin\\index.html"
+    "cover-dao": "istanbul cover --include-all-sources node_modules\\mocha\\bin\\_mocha spec\\dao_spec.js && start coverage\\lcov-report\\Kultures\\bin\\index.html"
   },
   "dependencies": {
     "body-parser": "~1.13.2",

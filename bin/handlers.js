@@ -1,10 +1,10 @@
 var config = require('config');
 var daoLib = config.get('DAO.lib');
-var DB = require( './dao' );
+var DB = require('./dao');
+var mongoDB = require('./mongoDB');
 var ValidateThis = require('./kulture_data').ValidateThis;
 var Promise = require( 'promise' );
 
-//var extract = require( './DBAccess' ).Extract;
 var debug = require('debug')('kulture:handlers');
 
 var Handlers = {
@@ -17,7 +17,7 @@ var Handlers = {
     }, 
 
     set DAO( connectStr ) {
-        this.dao = new DB.DAO( new DB.DbAccess( connectStr ) );
+        this.dao = new DB.DAO( new mongoDB.DbAccess( connectStr ) );
         debug( ":: set DAO: ", connectStr, " returns: ", this.dao );
         return this.dao;
     },
