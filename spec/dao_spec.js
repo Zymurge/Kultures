@@ -297,23 +297,21 @@ describe( "GetKultureById", function() {
             });
     });
     it("gracefully fails DB error", function () {
-        let err = "MongoDB error code: 999999";
+        let errMsg = "MongoDB error code: 999999";
+        mfiStub.rejects(errMsg);
         // Beware: sinin-as-promised rejects method throws an error object that wraps the message
         //         DAO returns a custom error object with the DB layer's err in the message, so we need to unwrap message.message 
         //         in this test for correct comparisons
-        mfiStub.rejects(err);
          return dao.GetKultureById('fail')
             .then((result) => {
                 debug("Promise fulfilled. Not sure why: ", result);
                 expect(result).to.be.null; // force fail
             })
             .catch((error) => {
-                debug( "Caught (expected) error: ", error.message.message );
-                expect(error).ok;
-                expect(error.message).ok;
-                expect(error.message instanceof Error ).to.be.true;
-                expect(error.message.message).to.equal( err );
-                expect(error.id).to.equal('fail');
+                // Unwrap here
+                error.message = error.message.message;
+                debug("Caught (expected) error: ", error.message);
+                ValidateJSONError(error, 'GetKultureById', 'fail', errMsg);
             });
     });
 } );
@@ -353,30 +351,38 @@ describe( "InsertKulture", function() {
                 ValidateJSONError(error, 'InsertKulture', 'none', 'kulture argument is null');
             });
     });
+    it("handles and notifies on duplicate ID", function () {
+        let errMsg = "duplicate id";
+        mikStub.rejects(errMsg);
+        return dao.InsertKulture(testKulture)
+            .then((result) => {
+                debug("Promise fulfilled. Not sure why: ", result);
+                expect(result).to.be.null; // force fail
+            })
+            .catch((error) => {
+                error.message = error.message.message;
+                debug("Caught (expected) error: ", error.message);
+                ValidateJSONError(error, 'InsertKulture', testKulture.ref.id, errMsg);
+            });
+    });
     it("gracefully fails DB error", function () {
-        let err = "MongoDB error code: 999999";
+        let errMsg = "MongoDB error code: 999999";
+        mikStub.rejects(errMsg);
         // Beware: sinin-as-promised rejects method throws an error object that wraps the message
         //         DAO returns a custom error object with the DB layer's err in the message, so we need to unwrap message.message 
         //         in this test for correct comparisons
-        mikStub.rejects(err);
         return dao.InsertKulture( testKulture )
             .then((result) => {
                 debug("Promise fulfilled. Not sure why: ", result);
                 expect(result).to.be.null; // force fail
             })
             .catch((error) => {
-                debug("Caught (expected) error: ", error.message.message);
-                expect(error).ok;
-                expect(error.api).ok;
-                expect(error.api).to.equal( 'InsertKulture' );
-                expect(error.id).ok;
-                expect(error.id).to.equal(testKulture.ref.id);
-                expect(error.message).ok;
-                expect(error.message instanceof Error).to.be.true;
-                expect(error.message.message).to.equal(err);
+                // Unwrap here
+                error.message = error.message.message;
+                debug("Caught (expected) error: ", error.message);
+                ValidateJSONError(error, 'InsertKulture', '13', errMsg );
             });
     });
-
 } );
 
 describe( "DeleteKultureById", function() {
@@ -425,26 +431,95 @@ describe( "DeleteKultureById", function() {
 			} );
 	} );
     it("gracefully fails DB error", function () {
-        let err = "MongoDB error code: 999999";
+        let errMsg = "MongoDB error code: 999999";
+        mdkStub.rejects(errMsg);
         // Beware: sinin-as-promised rejects method throws an error object that wraps the message
         //         DAO returns a custom error object with the DB layer's err in the message, so we need to unwrap message.message 
         //         in this test for correct comparisons
-        mdkStub.rejects(err);
         return dao.DeleteKultureById('fail')
             .then((result) => {
                 debug("Promise fulfilled. Not sure why: ", result);
                 expect(result).to.be.null; // force fail
             })
             .catch((error) => {
-                debug("Caught (expected) error: ", error.message.message);
-                expect(error).ok;
-                expect(error.message).ok;
-                expect(error.message instanceof Error).to.be.true;
-                expect(error.message.message).to.equal(err);
-                expect(error.id).to.equal('fail');
+                // Unwrap here
+                error.message = error.message.message;
+                debug("Caught (expected) error: ", error.message);
+                ValidateJSONError(error, 'DeleteKultureById', 'fail', errMsg);
             });
     });
-} );
+});
+
+describe("UpdateKulture", function () {
+    let db, dao;
+    let mukStub = sinon.stub(mongoDB.DbAccess.prototype, "MongoUpdateKulture");
+    beforeEach(function () {
+        db = new mongoDB.DbAccess("mongodb://dummy");
+        dao = new DB.DAO(db);
+        expect(dao).not.to.be.null;
+        expect(dao.db).to.equal(db);
+    });
+    it("fulfills on success", function () {
+        mukStub.resolves(testKulture.ref.id);
+        return dao.UpdateKulture(testKulture.ref.id)
+            .then((result) => {
+                debug("Promise fulfilled with payload: ", result);
+                expect(result).not.to.be.null;
+                expect(result).to.equal(testKulture.ref.id);
+            })
+            .catch((error) => {
+                debug("Caught error: ", error);
+                expect(error).to.be.null; // force fail
+            });
+    });
+    it("rejects on id not found in collection", function () {
+        let errMsg = "id not found";
+        mukStub.rejects( errMsg );
+        // Beware: sinin-as-promised rejects method throws an error object that wraps the message
+        //         DAO returns a custom error object with the DB layer's err in the message, so we need to unwrap message.message 
+        //         in this test for correct comparisons
+        return dao.UpdateKulture(testKulture)
+            .then((result) => {
+                debug("Promise fulfilled with payload: ", result);
+                expect(result).to.be.null;
+            })
+            .catch((error) => {
+                error.message = error.message.message;
+                debug("Caught (expected) error: ", error);
+                ValidateJSONError(error, 'UpdateKulture', testKulture.ref.id, errMsg );
+            });
+    });
+    it("gracefully fails null kulture arg", function () {
+        mukStub.resetBehavior();
+        return dao.UpdateKulture(null)
+            .then((result) => {
+                debug("Promise fulfilled. Not sure why: ", result);
+                expect(result).to.be.null; // force fail
+            })
+            .catch((error) => {
+                debug("Caught (expected) error: ", error);
+                ValidateJSONError(error, 'UpdateKulture', 'none', "kulture argument is null");
+            });
+    });
+    it("gracefully fails DB error", function () {
+        let errMsg = "MongoDB error code: 999999";
+        mukStub.rejects(errMsg);
+        // Beware: sinin-as-promised rejects method throws an error object that wraps the message
+        //         DAO returns a custom error object with the DB layer's err in the message, so we need to unwrap message.message 
+        //         in this test for correct comparisons
+        return dao.UpdateKulture(testKulture)
+            .then((result) => {
+                debug("Promise fulfilled. Not sure why: ", result);
+                expect(result).to.be.null; // force fail
+            })
+            .catch((error) => {
+                // Unwrap here
+                error.message = error.message.message;
+                debug("Caught (expected) error: ", error.message);
+                ValidateJSONError(error, 'UpdateKulture', testKulture.ref.id, errMsg);
+            });
+    });
+});
 
 /***** Helper functions *****/
 
@@ -536,6 +611,7 @@ let GetConnectErrorClient = function( url ) {
 }
 
 let ValidateJSONError = function (error, expectedApi, expectedId, expectedMessage) {
+    debug("ValidateJSONError for: ", error);
     expect(error, "error object must exist and be populated" ).ok;
     expect(error.api, "error.api must exist and be populated").ok;
     expect(error.api).to.equal(expectedApi);

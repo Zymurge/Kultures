@@ -182,7 +182,7 @@ DbAccess.prototype = {
                     if( err['code']===11000 ) {
                         reject( "duplicate id" );
                     } else {
- 	                  reject( "MongoDb error code: " + err['code'] );
+ 	                    reject( "MongoDb error code: " + err['code'] );
                     }
  	        	})
     	    	.finally( () => {
@@ -194,7 +194,7 @@ DbAccess.prototype = {
 
     /**
      * Deletes a kulture object specified by the id string
-     * @param {string} id - the id string  of the object to delete. Expected to match kulture.ref.id
+     * @param {string} kultureId - the id string of the object to delete. Expected to match kulture.ref.id
      * @returns {Promise} the id of the kulture object on success, or error message
      */
     MongoDeleteKulture: function (kultureId) {
@@ -223,7 +223,21 @@ DbAccess.prototype = {
 		        	self.connection.close();
 		        });
         });
+    },
+
+    /**
+     * Updates a kulture object in the 'kultures' collection. Does not allow change of kulture.ref.id.
+     * @param {object} kulture - the kulture object that is replacing the previous object with a matching kulture.ref.id
+     * @returns {Promise} the id of the kulture object on success, or error message
+     */
+    MongoUpdateKulture: function (kulture) {
+        var self = this;
+        debugDbAccess("MongoUpdateKulture: ", kulture.ref.id);
+        return new Promise(function (fulfill, reject) {
+            reject("Not implemented yet");
+        });
     }
+
 };
 
 module.exports = { DbAccess: DbAccess };

@@ -14,7 +14,6 @@ DAO.prototype = {
     GetKultureById: function (getId) {
         debugDAO("GetKultureById received: ", getId);
         var self = this;
-        var myClient = null;
         return new Promise(function (fulfill, reject) {
             if (getId === null) {
                 debugDAO("null param is no bueno");
@@ -60,12 +59,10 @@ DAO.prototype = {
     DeleteKultureById: function (kultureId) {
         debugDAO("DeleteKultureById received: ", kultureId);
         var self = this;
-        var myClient = null;
         return new Promise(function (fulfill, reject) {
             if (kultureId === null) {
                 debugDAO("null param is no bueno");
                 reject(Utils.GenerateErrorJSON('DeleteKultureById', 'none', "kultureId argument is null"));
-                //reject({ id: 'none', message: 'id argument is null' });
             }
             debugDAO(":: self.db= ", self.db);
             self.db.MongoDeleteKulture(kultureId)
@@ -82,10 +79,27 @@ DAO.prototype = {
                 .catch(function (err) {
                     debugDAO("DbAccess threw: " + err);
                     reject(Utils.GenerateErrorJSON('DeleteKultureById', kultureId,  err ));
-                    //reject({ id: kultureId, message: err });
                 });
         });
-    }
-};
+    },
+    UpdateKulture: function (kulture) {
+        var self = this;
+        debugDAO(".. UpdateKulture received:" + JSON.stringify(kulture));
+        return new Promise(function (fulfill, reject) {
+            if (kulture === null) {
+                debugDAO("null param is no bueno");
+                reject(Utils.GenerateErrorJSON('UpdateKulture', 'none', "kulture argument is null"));
+            }
+            self.db.MongoUpdateKulture(kulture)
+                .then(function (result) {
+                    debugDAO(".... update result: " + JSON.stringify(result));
+                    fulfill(result);
+                })
+                .catch(function (err) {
+                    debugDAO("DbAccess threw: " + err);
+                    reject(Utils.GenerateErrorJSON('UpdateKulture', kulture.ref.id, err));
+                });
+        });
+    },};
 
 module.exports = { DAO: DAO };
