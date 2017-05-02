@@ -4,87 +4,8 @@ var Promise = require('promise');
 var _ = require('underscore');
 var debugDbAccess = require('debug')('kulture:DbAccess');
 
-/*
-function DAO(dbConnection) {
-    debugDAO("DAO_ctor: ", dbConnection);
-    this.db = dbConnection;
-}
-
-DAO.prototype = {
-    GetKultureById: function (getId) {
-        debugDAO("GetKultureById received: ", getId);
-        var self = this;
-        var myClient = null;
-        return new Promise(function (fulfill, reject) {
-            if (getId === null) {
-                debugDAO("null param is no bueno");
-                reject({ id: 'none', message: 'id argument is null' });
-            }
-            debugDAO(":: self.db= ", self.db);
-            self.db.MongoFetchId(getId)
-                .then(function (result) {
-                debugDAO("..FetchId return: ", result);
-                if (_.isEmpty(result)) {
-                    debugDAO("....empty set = fail");
-                    reject({ id: getId, message: "id not found" });
-                }
-                else {
-                    fulfill(result);
-                }
-                ;
-            })
-                .catch(function (err) {
-                reject(err);
-            });
-        });
-    },
-    InsertKulture: function (kulture) {
-        var self = this;
-        debugDAO(".. InsertKulture received:" + JSON.stringify(kulture));
-        return new Promise(function (fulfill, reject) {
-            if (kulture === null) {
-                debugDAO("null param is no bueno");
-                reject({ id: 'none', message: 'kulture argument is null' });
-            }
-            self.db.MongoInsertKulture(kulture)
-                .then(function (result) {
-                debugDAO(".... insert result: " + JSON.stringify(result));
-                fulfill(result);
-            })
-                .catch(function (err) {
-                reject(err);
-            });
-        });
-    },
-    DeleteKultureById: function (kultureId) {
-        debugDAO("GetKultureById received: ", kultureId);
-        var self = this;
-        var myClient = null;
-        return new Promise(function (fulfill, reject) {
-            if (kultureId === null) {
-                debugDAO("null param is no bueno");
-                reject({ id: 'none', message: 'id argument is null' });
-            }
-            debugDAO(":: self.db= ", self.db);
-            self.db.MongoDeleteKulture(kultureId)
-                .then(function (result) {
-                debugDAO("..DeleteId return: ", result);
-                if (_.isEmpty(result)) {
-                    debugDAO("....empty set = fail");
-                    reject({ id: kultureId, message: "id not found" });
-                }
-                else {
-                    fulfill(result);
-                }
-                ;
-            })
-                .catch(function (err) {
-                reject(err);
-            });
-        });
-    }
-};
-*/
+/** Constants **/
+let KulturesCollectionName = 'kultures';
 
 /**
  * Object to interface with Mongo service, with functionality specific to CRUD ops for kulture objects
@@ -115,14 +36,14 @@ DbAccess.prototype = {
     ConnectToMongo: function () {
         var self = this;
         return new Promise(function (fulfill, reject) {
-            debugDbAccess("Attempting to connect to ", self.connectStr);
+            debugDbAccess("ConnectToMongo: Attempting to connect to ", self.connectStr);
             MongoClient.connect(self.connectStr, function (err, db) {
                 if (err) {
-                    debugDbAccess("Error rcvd: ", err);
+                    debugDbAccess("... Error rcvd: ", err);
                     reject(err);
                 }
                 else {
-                    debugDbAccess("Connected to mongo");
+                    debugDbAccess("... Connected to mongo.");
                     self.connection = db;
                     fulfill(db);
                 }
@@ -167,11 +88,14 @@ DbAccess.prototype = {
     MongoInsertKulture: function (kulture) {
         var self = this;
         debugDbAccess("MongoInsertKulture: ", kulture.ref.id);
+		//return Promise.reject("Bomb");
         return new Promise( function (fulfill, reject) {
             self.ConnectToMongo()
                 .then( function (connection) {
-	                kultureCollection = self.connection.collection('kultures');
-    	            return kultureCollection.insertOne(kulture);
+	                //kultureCollection = self.connection.collection('kultures');
+	                kultureCollection = connection.collection( KulturesCollectionName );
+					debugDbAccess( "MongoInsertKulture: connected. Created collection: ", KulturesCollectionName );
+       	            return kultureCollection.insertOne(kulture);
         	    })
             	.then( function (result) {
                 	debugDbAccess(".. insert count: ", result.insertedCount);

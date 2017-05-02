@@ -14,7 +14,7 @@ chai.use(chaiAsPromised);
 let expect = chai.expect;
 let should = chai.should;
 
-let testMongoUrl = "mongodb://localhost";
+let testMongoUrl = "mongodb://127.0.0.1";
 let testKultureCollection = "kultures"; 
 let testKulture = {
     ref: {
@@ -39,6 +39,7 @@ let testKulture = {
       health: 200
     }
  };
+
 
 describe( "DbAccess constructor", function() {
 	it( "creates values properly with default timeout", function( done ) {
@@ -68,185 +69,6 @@ describe( "DbAccess constructor", function() {
 		let badUrl = "mangled-db://Imabadurl";
         expect(() => { new mongoDB.DbAccess( badUrl ); } ).to.throw( Error );
 		done();
-	} );
-} );
-
-describe( "With Mongodb running", function() {
-	let client;
-	let beforeCnt = 1;
-	let running = false; // add check for Mongo running
-	beforeEach( function() {
-		debug( "++++++++\n@beforeEach case #" + beforeCnt++ );
-		if( running ) { 
-			client = new mongoDB.DbAccess( "mongodb://localhost" );
-			MongoClean( testKultureCollection )
-				.then( ( result ) => {
-					debug( "@beforeEach - MongoClean returned: ", result );
-				} );
-		} else {
-			debug( "No Mongo, should be skipping this section" );
-			this.skip();
-		};
-	} );
-		
-	describe( "DBAccess ConnectToMongo", function() {
-		it( "can connect at localhost", function( done ) {
-			client.ConnectToMongo()
-				.then( ( db ) => {
-					expect( db ).not.to.be.null;
-					expect( db.databaseName ).not.to.be.null;
-					db.close();
-					done();
-				} )
-				.catch( ( err ) => {
-					debug( "ConnectToMongo err: ", err );
-					expect( err ).not.to.beTruthy( "should not get here with a connection" );
-					done();
-				} )
-		} );
-	} );
-
-	describe( "DBAccess MongoInsertKulture", function() {
-		it("inserts a record", function( done ) {
-			client.MongoInsertKulture( testKulture )
-				.then( ( id ) => {
-					debug( "successfully inserted: ", id );
-					expect( id ).to.equal( testKulture.ref.id );
-					return client.MongoFetchId( testKulture.ref.id );
-				} )
-				.then( ( kulture ) => {
-					debug( "successfully fetched: ", kulture );
-					expect( kulture ).not.to.be.null;
-					expect( kulture.ref.id ).to.equal( testKulture.ref.id );
-				} )
-				.catch( ( error ) => {
-					debug( "Caught error: ", error );
-					expect( error ).to.be.null; // force fail
-				} )
-				.finally( () => { done(); } )
-		} );
-		it( "returns on error on attempt to insert existing id", function( done ) {
-			client.MongoInsertKulture( testKulture )
-				.then( ( id ) => {
-					debug( "successfully inserted: ", id );
-					expect( id ).to.equal( testKulture.ref.id );
-					// if successful try the same insert again
-					return client.MongoInsertKulture( testKulture );
-				} )
-				.then( ( kulture ) => {
-					debug( "success when error expected on duplicate insert" );
-					expect( result ).to.be.null; // force fail				
-				})
-				.catch( ( error ) => {
-					debug( "Caught (expected) error: ", error );
-					expect( error ).not.to.be.null;
-					expect( error ).to.equal( 'duplicate id' );
-				} )
-				.finally( () => { done(); } )
-		} );
-		it("handles mongo connection errors on insert", function( done ) {
-			let mockClient = GetConnectErrorClient( "mongodb://it.dont.matter" );
-			mockClient.MongoInsertKulture( testKulture )
-				.then( ( result ) => {
-					debug( "Promise fulfilled. Not sure why: ", result );
-					expect( result ).to.be.null; // force fail
-					done();
-				} )
-				.catch( ( error ) => {
-					debug( "Caught (expected) error: ", error );
-					expect( error ).not.to.be.null;
-					expect( error ).to.equal( "MongoDb error code: -1" );
-					done();
-				} );
-		} );
-	} );
-
-	describe( "DBAccess MongoDeleteKulture", function() {
-		it( "can delete the preloaded record" , function( done ) {
-			MongoAdd( testKulture )
-				.then( () => {
-					return client.MongoDeleteKulture( testKulture.ref.id ); 
-				} )
-				.then( ( id ) => {
-					debug( "successfully deleted: ", testKulture.ref.id );
-					expect( id ).not.to.be.null;
-					expect( id).to.equal( testKulture.ref.id );
-				} )
-				.catch( ( error ) => {
-					debug( "Caught error: ", error );
-					expect( error ).to.be.null; // force fail
-				} )
-				.finally( () => { 
-					debug( "...finally!" );
-					done(); 
-				} );
-		} );	
-
-		it("handles mongo connection errors on delete", function( done ) {
-			let mockClient = GetConnectErrorClient( "mongodb://it.dont.matter" );
-			mockClient.MongoDeleteKulture( "dummy ID" )
-				.then( ( result ) => {
-					debug( "Promise fulfilled. Not sure why: ", result );
-					expect( result ).to.be.null; // force fail
-					done();
-				} )
-				.catch( ( error ) => {
-					debug( "Caught (expected) error: ", error );
-					expect( error ).not.to.be.null;
-					expect( error ).to.equal( "MongoDb error code: -1" );
-					done();
-				} );
-		} );
-	} );
-
-	describe( "DBAccess MongoFetchId", function() {
-		it( "can fetch the preloaded record" , function( done ) {
-			MongoAdd( testKulture )
-				.then( () => {
-					return client.MongoFetchId( testKulture.ref.id ); 
-				} )
-				.then( ( kulture ) => {
-					debug( "successfully fetched: ", kulture );
-					expect( kulture ).not.to.be.null;
-					expect( kulture.ref.id ).to.equal( testKulture.ref.id );
-				} )
-				.catch( ( error ) => {
-					debug( "Caught error: ", error );
-					expect( error ).to.be.null; // force fail
-				} )
-				.finally( () => { 
-					debug( "...finally!" );
-					done(); 
-				} );
-		} );	
-		it("handles a missing record", function( done ) {
-			client.MongoFetchId( '0' )
-				.then( ( kulture ) => {
-					debug( "successfully fetched: ", kulture );
-					expect( kulture ).not.to.be.null;
-					expect( _.isEmpty( kulture ) ).to.equal( true );
-				} )
-				.catch( ( error ) => {
-					debug( "Caught error: ", error );
-					expect( error ).to.be.null; // force fail
-				} )
-				.finally( () => { done(); } )
-		} );
-		it("handles mongo connection errors on fetch", function( done ) {
-			let mockClient = GetConnectErrorClient( "mongodb://it.dont.matter" );
-			mockClient.MongoFetchId( "dummy ID" )
-				.then( ( result ) => {
-					debug( "Promise fulfilled. Not sure why: ", result );
-					expect( result ).to.be.null; // force fail
-					done();
-				} )
-				.catch( ( error ) => {
-					debug( "Caught (expected) error: ", error );
-					expect( error ).not.to.be.null;
-					expect( error ).to.equal( "MongoDb error code: -1" );
-					done();
-				} );
-		} );
 	} );
 } );
 
@@ -523,29 +345,32 @@ describe("UpdateKulture", function () {
 
 /***** Helper functions *****/
 
+let debugUtil = require('debug')("test:util");
 let MongoClean = function( collection ) {
 	return new Promise( function ( fulfill, reject ) {
 		MongoClient.connect( testMongoUrl, function( err, db ) {
 			if( err ) { 
-				debug( "MongoClean: Couldn't connect to mongo", err );
+				debugUtil( "MongoClean: Couldn't connect to mongo", err );
 				reject( "MongoClean error:" + err );
 			} else {
-				debug( "MongoClean: Connected to mongo" );
+				debugUtil( "MongoClean: Connected to mongo" );
+				//debug( " ... client state at start: ", db );
+
 				// insert test kulture here	
 				let dropMe = db.collection( collection );
-				debug( "MongoClean: collection:", collection, "is", typeof dropMe );
+				debugUtil( "MongoClean: collection:", collection, "is", typeof dropMe );
 				if ( dropMe ) {
 					dropMe.drop()
 						.then( () => {
-							debug( "MongoClean: deleted collection", collection );
+							debugUtil( "MongoClean: deleted collection", collection );
 							fulfill( "deleted collection" );
 						} )
 						.catch( ( err ) => {
-							debug( "MongoClean: Couldn't drop collection. It's likely already gone." );							fulfill( "deleted collection" );
+							debugUtil( "MongoClean: Couldn't drop collection. It's likely already gone." );
 							fulfill( "deleted collection failed, already missing?" );
 						} )
 				} else {
-					debug( "MongoClean: no collection:", collection, "consider it dropped" );
+					debugUtil( "MongoClean: no collection:", collection, "consider it dropped" );
 					fulfill( "collection missing" );
 				};
 				db.close();
@@ -558,15 +383,16 @@ let MongoAdd = function( kulture ) {
 	return new Promise( function( fulfill, reject ) {
 		MongoClient.connect( testMongoUrl, function( err, db ) {
 			if( err ) { 
-				debug( "MongoAdd: Couldn't connect to mongo ", err );
+				debugUtil( "MongoAdd: Couldn't connect to mongo ", err );
 				reject(  "MongoAdd error: " + err  );
 			} else {
-				debug( "MongoAdd: Connected to mongo" );
+				debugUtil( "MongoAdd: Connected to mongo" );
 				// insert test kulture here	
-				debug( "MongoAdd: inserted test record" );
+				debugUtil( "MongoAdd: inserted test record" );
 				db.collection( testKultureCollection ).insertOne( kulture );
-				fulfill( true );
+				debugUtil( "MongoAdd: closing mongo connection" );
 				db.close();
+				fulfill( true );
 			};
 		} );
 	} );

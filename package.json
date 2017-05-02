@@ -6,6 +6,7 @@
     "start": "node ./bin/www",
     "startserver": "start spec\\start_mock_server.cmd && timeout 3",
     "test": "./node_modules/.bin/mocha spec",
+    "mongo_test": "./node_modules/.bin/mocha spec/mongodb_spec.js",
     "j-test": "jasmine-node spec",
     "j-test-dao": "jasmine-node spec\\dao_spec.js",
     "cover": "istanbul cover --include-all-sources node_modules\\mocha\\bin\\_mocha spec && start coverage\\lcov-report\\index.html",

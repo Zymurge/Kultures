@@ -3,3 +3,6 @@ npm-debug.log
 coverage/
 kultures_old/
 old/
+db/
+.vs/
+.vscode/
