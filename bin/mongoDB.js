@@ -11,7 +11,8 @@ let KulturesCollectionName = 'kultures';
  * Object to interface with Mongo service, with functionality specific to CRUD ops for kulture objects
  * @constructor
  * @param {string} url - the URI describing the Mongo DB location. Must start with 'mongodb://'
- @ @param {Number} [timeOut=4000] - the connection timeout in milliseconds
+ * @param {Number} [timeOut=4000] - the connection timeout in milliseconds
+ * @throws Will throw an Error if the {@link url} param doesn't begin with the 'mongodb://' protocol
  */
 function DbAccess(url, timeOut) {
     if (!url.startsWith("mongodb://")) {

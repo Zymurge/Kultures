@@ -65,9 +65,9 @@ describe( "DbAccess constructor", function() {
 		expect( db.connectStr ).to.equal( pp_url + "?connectTimeoutMS=4000" );
 		done();
 	} )
-	it( "throws on bad url", function( done ) {
-		let badUrl = "mangled-db://Imabadurl";
-        expect(() => { new mongoDB.DbAccess( badUrl ); } ).to.throw( Error );
+	it("rejects url that isn't prepended with the 'mongodb://' protocol string", function (done) {
+		let bad_prefix_url = "wrongproto.url";
+		expect(() => { new mongoDB.DbAccess(bad_prefix_url); }).to.throw(Error);
 		done();
 	} );
 } );
