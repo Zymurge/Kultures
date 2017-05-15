@@ -82,18 +82,24 @@ DbAccess.prototype = {
     },
 
     /**
-     * Inserts a kulture object into the 'kultures' collection. Enforces unique id within collection
+     * Inserts a kulture object into the 'kultures' collection. Enforces unique id within collection,
+     * based on the ref.id property.
      * @param {object} kulture - the kulture object as JSON
      * @returns {Promise} the id of the kulture object on success, or error message
+     * @throws if {@link kulture} doesn't contain a ref.id property
      */
     MongoInsertKulture: function (kulture) {
         var self = this;
         debugDbAccess("MongoInsertKulture: ", kulture.ref.id);
 		//return Promise.reject("Bomb");
+        if (! ( kulture.hasOwnProperty("ref")
+                && kulture.ref.hasOwnProperty("id") ) ) {
+            debugDbAccess("MongoInsertKulture: missing ref.id property. Rejecting");
+            return Promise.reject("object missing ref.id property");
+        }
         return new Promise( function (fulfill, reject) {
             self.ConnectToMongo()
                 .then( function (connection) {
-	                //kultureCollection = self.connection.collection('kultures');
 	                kultureCollection = connection.collection( KulturesCollectionName );
 					debugDbAccess( "MongoInsertKulture: connected. Created collection: ", KulturesCollectionName );
        	            return kultureCollection.insertOne(kulture);
@@ -132,16 +138,15 @@ DbAccess.prototype = {
 	                return kultureCollection.deleteOne({ 'ref.id': kultureId });
 	            } )
 	            .then( function (result) {
-	                debugDbAccess(".. delete count: ", result.deletedCount);
-	                fulfill(kultureId);
+                    debugDbAccess(".. delete count: ", result.deletedCount);
+                    if (result.deletedCount == 1)
+                        fulfill(kultureId)
+                    else
+                        reject("id not found");    
 	            })
                 .catch( function (err) {
                    debugDbAccess( "mongo delete error: ", err['name'], err['code'], err['message'] );
-                    if( err['code']===11000 ) {
-                        reject( "duplicate id" );
-                    } else {
-                      reject( "MongoDb error code: " + err['code'] );
-                    }
+                   reject( "MongoDb error code: " + err['code'] );
                 })
 			    .finally( () => {
 		    	    debugDbAccess( "closing MongoClient connection" );
@@ -154,13 +159,40 @@ DbAccess.prototype = {
      * Updates a kulture object in the 'kultures' collection. Does not allow change of kulture.ref.id.
      * @param {object} kulture - the kulture object that is replacing the previous object with a matching kulture.ref.id
      * @returns {Promise} the id of the kulture object on success, or error message
+     * @throws if {@link kulture} doesn't contain a ref.id property
      */
     MongoUpdateKulture: function (kulture) {
         var self = this;
-        debugDbAccess("MongoUpdateKulture: ", kulture.ref.id);
+        debugDbAccess("MongoUpdateKulture: ", kulture);
+        if (!(kulture.hasOwnProperty("ref")
+            && kulture.ref.hasOwnProperty("id"))) {
+            debugDbAccess("MongoUpdateKulture: missing ref.id property. Rejecting");
+            return Promise.reject("object missing ref.id property");
+        }
         return new Promise(function (fulfill, reject) {
-            reject("Not implemented yet");
-        });
+            self.ConnectToMongo()
+                .then(function (connection) {
+                    kultureCollection = connection.collection(KulturesCollectionName);
+                    debugDbAccess("MongoUpdateKulture: connected. Created collection: ", KulturesCollectionName);
+                    return kultureCollection.update(
+                        { "ref.id": kulture.ref.id },
+                        { $set: kulture }
+                    );
+                })
+                .then(function (result) {
+                   // debugDbAccess(".. update result:", result);
+                    debugDbAccess(".. update count: \nModified -", result.result.nModified);
+                    fulfill(kulture.ref.id);
+                })
+                .catch(function (err) {
+                    debugDbAccess("mongo insert error: ", err['name'], err['code'], err['message']);
+                    reject("MongoDb error code: " + err['code']);
+                })
+                .finally(() => {
+                    debugDbAccess("closing MongoClient connection");
+                    self.connection.close();
+                });
+       });
     }
 
 };
