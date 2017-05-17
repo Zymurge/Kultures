@@ -5,11 +5,11 @@
   "scripts": {
     "start": "node ./bin/www",
     "startserver": "start spec\\start_mock_server.cmd && timeout 3",
-    "test": "call ./spec/all_tests.cmd",
-    "test_mongo": "call node_modules/.bin/mocha spec/_test*",
-    "cover": "istanbul cover --include-all-sources node_modules/mocha/bin/_mocha spec/test* && start coverage\\lcov-report\\index.html",
-    "cover_mongo": "istanbul cover --include-all-sources node_modules/mocha/bin/_mocha spec/_test* && start coverage\\lcov-report\\index.html",
-    "cover": "istanbul cover --include-all-sources node_modules/mocha\\bin/_mocha spec/test* && start coverage\\lcov-report\\index.html",
+    "test": "call ./test/all_tests.cmd",
+    "test_mongo": "call node_modules/.bin/mocha test/_test*",
+    "cover": "istanbul cover --include-all-sources node_modules/mocha/bin/_mocha test/test* && start coverage\\lcov-report\\index.html",
+    "cover_mongo": "istanbul cover --include-all-sources node_modules/mocha/bin/_mocha test/_test* && start coverage\\lcov-report\\index.html",
+    "cover": "istanbul cover --include-all-sources node_modules/mocha\\bin/_mocha test/test* && start coverage\\lcov-report\\index.html",
     "j-cover-kluster": "istanbul cover --include-all-sources node_modules\\jasmine-node\\bin\\jasmine-node spec\\kluster_spec.js && start coverage\\lcov-report\\Kultures\\bin\\index.html",
     "j-cover-kulture": "istanbul cover --include-all-sources node_modules\\jasmine-node\\bin\\jasmine-node spec\\kulture_spec.js && start coverage\\lcov-report\\Kultures\\bin\\index.html",
     "cover-dao": "istanbul cover --include-all-sources node_modules\\mocha\\bin\\_mocha spec\\dao_spec.js && start coverage\\lcov-report\\Kultures\\bin\\index.html"

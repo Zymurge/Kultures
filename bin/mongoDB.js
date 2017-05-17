@@ -181,7 +181,10 @@ DbAccess.prototype = {
                 })
                 .then(function (result) {
                    // debugDbAccess(".. update result:", result);
-                    debugDbAccess(".. update count: \nModified -", result.result.nModified);
+                    debugDbAccess(".. update count: \nModified -", result.result);
+                    if (result.result.ok == 1 && result.result.nModified == 0) {
+                        reject("id not found");
+                    }
                     fulfill(kulture.ref.id);
                 })
                 .catch(function (err) {
