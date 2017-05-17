@@ -5,12 +5,6 @@ let MongoClient = require('mongodb').MongoClient;
 let Promise = require( 'promise' );
 let _ = require( 'underscore' );
 
-let chai = require( 'chai' );
-let chaiAsPromised = require( 'chai-as-promised' );
-chai.use(chaiAsPromised);
-let expect = chai.expect;
-let should = chai.should;
-
 let testMongoUrl = "mongodb://127.0.0.1";
 let testKultureCollection = "kultures"; 
 let testKulture = {

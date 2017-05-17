@@ -5,15 +5,6 @@ let MongoClient = require('mongodb').MongoClient;
 let Promise = require( 'promise' );
 let _ = require( 'underscore' );
 
-let sinon = require( 'sinon' );
-require( 'sinon-as-promised' );
-
-let chai = require( 'chai' );
-let chaiAsPromised = require( 'chai-as-promised' );
-chai.use(chaiAsPromised);
-let expect = chai.expect;
-let should = chai.should;
-
 let testMongoUrl = "mongodb://127.0.0.1";
 let testKultureCollection = "kultures"; 
 let testKulture = {
@@ -40,11 +31,10 @@ let testKulture = {
     }
  };
 
-
-describe( "DbAccess constructor", function() {
+describe("DbAccess constructor", function () {
 	it( "creates values properly with default timeout", function( done ) {
         let db = new mongoDB.DbAccess( testMongoUrl );
-		expect( db ).not.to.be.null;
+		expect( db ).ok;
 		expect( db.mongoUrl ).to.equal( testMongoUrl );
 		expect( db.connection ).to.be.null;
 		expect( db.connectStr ).to.equal( testMongoUrl + "/?connectTimeoutMS=4000" );
@@ -52,7 +42,7 @@ describe( "DbAccess constructor", function() {
 	} );
 	it( "creates values properly with explicit timeout", function( done ) {
         let db = new mongoDB.DbAccess( testMongoUrl, 50000 );
-		expect( db ).not.to.be.null;
+		expect( db ).ok;
 		expect( db.connectStr ).to.equal( testMongoUrl + "/?connectTimeoutMS=50000" );
 		done();
 	} );
@@ -60,7 +50,7 @@ describe( "DbAccess constructor", function() {
 		let pp_url = "mongodb://post-pended_url/";
 		let pp_url_fixed = "mongodb://post-pended_url";
         let db = new mongoDB.DbAccess( pp_url );
-		expect( db ).not.to.be.null;
+		expect( db ).ok;
 		expect( db.mongoUrl ).to.equal( pp_url_fixed );
 		expect( db.connectStr ).to.equal( pp_url + "?connectTimeoutMS=4000" );
 		done();
@@ -78,7 +68,7 @@ describe( "GetKultureById", function() {
 	beforeEach( function() {
 		db = new mongoDB.DbAccess("mongodb://dummy" );
 		dao = new DB.DAO( db );
-		expect( dao ).not.to.be.null;
+		expect( dao ).ok;
 		expect( dao.db ).to.equal( db );
 	} );
 	it( "fulfills on success", function() {
@@ -86,12 +76,12 @@ describe( "GetKultureById", function() {
 		return dao.GetKultureById( testKulture.ref.id )
 			.then( ( kulture ) => {
 				debug( "Promise fulfilled with payload: ", kulture );
-				expect( kulture ).not.to.be.null;
+				expect( kulture ).ok;
 				expect( kulture ).to.equal( testKulture );
 			} )
 			.catch( ( error ) => {
 				debug( "Caught error: ", error );
-				expect( error ).to.be.null; // force fail
+				expect( error ).not.ok; // force fail
 			} ); 
 	} );	
 	it( "rejects on id not found in collection", function() {
@@ -111,7 +101,7 @@ describe( "GetKultureById", function() {
         return dao.GetKultureById(null)
             .then((result) => {
                 debug("Promise fulfilled. Not sure why: ", result);
-                expect(result).to.be.null; // force fail
+                expect(result).not.ok; // force fail
            })
             .catch((error) => {
                 debug("Caught (expected) error: ", error);
@@ -127,7 +117,7 @@ describe( "GetKultureById", function() {
          return dao.GetKultureById('fail')
             .then((result) => {
                 debug("Promise fulfilled. Not sure why: ", result);
-                expect(result).to.be.null; // force fail
+                expect(result).not.ok; // force fail
             })
             .catch((error) => {
                 // Unwrap here
@@ -144,7 +134,7 @@ describe( "InsertKulture", function() {
 	beforeEach( function() {
 		db = new mongoDB.DbAccess("mongodb://dummy" );
 		dao = new DB.DAO( db );
-		expect( dao ).not.to.be.null;
+		expect( dao ).ok;
 		expect( dao.db ).to.equal( db );
 	} );
 	it( "fulfills on success", function() {		
@@ -153,12 +143,12 @@ describe( "InsertKulture", function() {
 		return dao.InsertKulture( testKulture )
 			.then( ( result ) => {
 				debug( "Promise fulfilled with payload: ", result );
-				expect( result ).not.to.be.null;
+				expect( result ).ok;
 				expect( result ).to.equal( testKulture.ref.id );
 			} )
 			.catch( ( error ) => {
 				debug( "Caught error: ", error );
-				expect( error ).to.be.null; // force fail
+                expect(error, "Error thrown when success expected").not.ok; // force fail
 			} ); 
 	} );
     it("gracefully fails null kulture arg", function () {
@@ -166,7 +156,7 @@ describe( "InsertKulture", function() {
         return dao.InsertKulture(null)
             .then((result) => {
                 debug("Promise fulfilled. Not sure why: ", result);
-                expect(result).to.be.null; // force fail
+                expect(result, "Error thrown when success expected").not.ok; // force fail
             })
             .catch((error) => {
                 debug("Caught (expected) error: ", error);
@@ -179,7 +169,7 @@ describe( "InsertKulture", function() {
         return dao.InsertKulture(testKulture)
             .then((result) => {
                 debug("Promise fulfilled. Not sure why: ", result);
-                expect(result).to.be.null; // force fail
+                expect(result, "Error thrown when success expected").not.ok; // force fail
             })
             .catch((error) => {
                 error.message = error.message.message;
@@ -196,7 +186,7 @@ describe( "InsertKulture", function() {
         return dao.InsertKulture( testKulture )
             .then((result) => {
                 debug("Promise fulfilled. Not sure why: ", result);
-                expect(result).to.be.null; // force fail
+                expect(result, "Error thrown when success expected").not.ok; // force fail
             })
             .catch((error) => {
                 // Unwrap here
@@ -213,7 +203,7 @@ describe( "DeleteKultureById", function() {
     beforeEach(function () {
         db = new mongoDB.DbAccess("mongodb://dummy");
         dao = new DB.DAO(db);
-        expect(dao).not.to.be.null;
+        expect(dao).ok;
         expect(dao.db).to.equal(db);
     });
 	it( "fulfills on success", function() {
@@ -221,12 +211,12 @@ describe( "DeleteKultureById", function() {
 		return dao.DeleteKultureById( testKulture.ref.id )
 			.then( ( result ) => {
 				debug( "Promise fulfilled with payload: ", result );
-				expect( result ).not.to.be.null;
+				expect( result ).ok;
 				expect( result ).to.equal( testKulture.ref.id );
 			} )
 			.catch( ( error ) => {
 				debug( "Caught error: ", error );
-				expect( error ).to.be.null; // force fail
+                expect(error, "Error thrown when success expected").not.ok; // force fail
 			} );
 	} );	
 	it( "rejects on id not found in collection", function() {
@@ -245,7 +235,7 @@ describe( "DeleteKultureById", function() {
 		return dao.DeleteKultureById( null )
 			.then( ( result ) => {
 				debug( "Promise fulfilled. Not sure why: ", result );
-				expect( result ).to.be.null; // force fail
+                expect(result, "Error thrown when success expected").not.ok; // force fail
 			} )
 			.catch( ( error ) => {
                 debug("Caught (expected) error: ", error);
@@ -261,7 +251,7 @@ describe( "DeleteKultureById", function() {
         return dao.DeleteKultureById('fail')
             .then((result) => {
                 debug("Promise fulfilled. Not sure why: ", result);
-                expect(result).to.be.null; // force fail
+                expect(result, "Error thrown when success expected").not.ok; // force fail
             })
             .catch((error) => {
                 // Unwrap here
@@ -278,7 +268,7 @@ describe("UpdateKulture", function () {
     beforeEach(function () {
         db = new mongoDB.DbAccess("mongodb://dummy");
         dao = new DB.DAO(db);
-        expect(dao).not.to.be.null;
+        expect(dao).ok;
         expect(dao.db).to.equal(db);
     });
     it("fulfills on success", function () {
@@ -286,18 +276,18 @@ describe("UpdateKulture", function () {
         return dao.UpdateKulture(testKulture.ref.id)
             .then((result) => {
                 debug("Promise fulfilled with payload: ", result);
-                expect(result).not.to.be.null;
+                expect(result).ok;
                 expect(result).to.equal(testKulture.ref.id);
             })
             .catch((error) => {
                 debug("Caught error: ", error);
-                expect(error).to.be.null; // force fail
+                expect(error).not.ok; // force fail
             });
     });
     it("rejects on id not found in collection", function () {
         let errMsg = "id not found";
         mukStub.rejects( errMsg );
-        // Beware: sinin-as-promised rejects method throws an error object that wraps the message
+        // Beware: sinon-as-promised rejects method throws an error object that wraps the message
         //         DAO returns a custom error object with the DB layer's err in the message, so we need to unwrap message.message 
         //         in this test for correct comparisons
         return dao.UpdateKulture(testKulture)
@@ -316,7 +306,7 @@ describe("UpdateKulture", function () {
         return dao.UpdateKulture(null)
             .then((result) => {
                 debug("Promise fulfilled. Not sure why: ", result);
-                expect(result).to.be.null; // force fail
+                expect(result).not.ok; // force fail
             })
             .catch((error) => {
                 debug("Caught (expected) error: ", error);
@@ -332,7 +322,7 @@ describe("UpdateKulture", function () {
         return dao.UpdateKulture(testKulture)
             .then((result) => {
                 debug("Promise fulfilled. Not sure why: ", result);
-                expect(result).to.be.null; // force fail
+                expect(result).not.ok; // force fail
             })
             .catch((error) => {
                 // Unwrap here
