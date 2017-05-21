@@ -11,19 +11,19 @@ let should = chai.should;
 
 describe( "Helper functions:", function() {
 	it( "BuildKultureArray works", function(done) {
-		let k = BuildKultureArray( -2, 3 );
-        expect(k).not.to.be.false;
-		expect( k.length ).to.equal( 216 );
-		expect( k[0] ).not.to.be.null;
-        expect( k[0].ref ).not.to.be.null;
-		expect( k[0].Id ).to.equal( '-2.-2.-2' );
-		expect( k[215].Id ).to.equal( '3.3.3' );
-        expect( k[214].display ).not.to.be.null;
-		expect( k[214].display.loc.x ).to.equal( 3 );
-		expect( k[214].display.loc.z ).to.equal( 2 );  
-		done(); 
-	} );
-} );
+		let k = BuildKultureArray(-2, 3);
+		expect(k).not.to.be.false;
+		expect(k.length).to.equal(216);
+		expect(k[0]).ok;
+		expect(k[0].Ref).ok;
+		expect(k[0].Id).to.equal('-2.-2.-2');
+		expect(k[215].Id).to.equal('3.3.3');
+		expect(k[214].Display).ok;
+		expect(k[214].Display.loc.x).to.equal(3);
+		expect(k[214].Display.loc.z).to.equal(2);
+		done();
+	})
+});
 
 describe( "ctor basics", function() {
 	it( "creates the right object type", function(done) {
@@ -253,9 +253,9 @@ function RemoveNodeFromJSON( good_json, deleteNode ) {
 function BuildKulture( x, y, z ) {
 	let id = x + '.' + y + '.' + z;
 	let name = 'I am ' + id;
-	let json = 	{
+	let json = {
+		_id: id,
 		ref: {
-			id: id,
 			name: name
 		},
 		display: {

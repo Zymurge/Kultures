@@ -118,7 +118,7 @@ Kluster.prototype = {
     debug( "GetByLoc: " + JSON.stringify( loc ) );
     for( id in this.kultures ) {
       //debug( "id:",JSON.stringify( this.kultures[id].display.loc ) );
-      if( _.isEqual( this.kultures[id].display.loc, loc ) ) {
+      if( _.isEqual( this.kultures[id].Display.loc, loc ) ) {
         return this.kultures[id];
       }
     }
@@ -134,7 +134,7 @@ Kluster.prototype = {
   GetNeighbors: function( id ) {
     debug( "GetNeighbors: " + JSON.stringify( id ) );
     let result = {};
-    let centerLoc = this.GetById( id ).display.loc;
+    let centerLoc = this.GetById( id ).Display.loc;
     result['0pm'] = this.GetByLoc( { x: centerLoc.x, y: centerLoc.y + 1, z: centerLoc.z - 1 } );
     result['0mp'] = this.GetByLoc( { x: centerLoc.x, y: centerLoc.y - 1, z: centerLoc.z + 1 } );
     result['p0m'] = this.GetByLoc( { x: centerLoc.x + 1, y: centerLoc.y, z: centerLoc.z - 1 } );

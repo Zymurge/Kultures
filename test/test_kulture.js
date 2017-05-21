@@ -73,7 +73,7 @@ describe( "Kulture ctor basics", function() {
 	})
 });
 
-describe.only( "Kulture accessors", function() {
+describe( "Kulture accessors", function() {
 	var k;
 	beforeEach( function() {
 		k = new Kulture( test_json );
