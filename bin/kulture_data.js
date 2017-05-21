@@ -31,7 +31,9 @@ var debug = require('debug')('kulture:kulture_data');
     }
   }
  */
-var Kulture = function Kulture( data ) {
+var Kulture = function Kulture(data) {
+  _display = null;
+
   let debug = require('debug')('kulture:kulture_object');
   debug( "ctor arg = " + data );
 
@@ -47,23 +49,79 @@ var Kulture = function Kulture( data ) {
 	}
 
   // force deep copy
-  this.data = JSON.parse( JSON.stringify( data ) );
+  this._data = JSON.parse( JSON.stringify( data ) );
   // map sections up one level to object attributes
-  this.ref = this.data.ref;
-  this.display = this.data.display;
-  this.attributes = this.data.attributes;
-  this.status = this.data.status;
-  debug( "ctor(ref.id) = " + this.ref.id );
+  Object.defineProperties(this, {
+    "_id": {
+      value: this._data._id
+    },
+    "Id": {
+      "get": function () { return this._id; }
+    }
+  });
+  Object.defineProperties(this, {
+    "_ref": {
+      value: this._data.ref
+    },
+    "Ref": {
+      "get": function () { return this._ref; }
+    }
+  });
+  Object.defineProperties(this, {
+    "_display": {
+      value: this._data.display
+    },
+    "Display": {
+      "get": function () { return this._display; }
+    }
+  });
+  Object.defineProperties(this, {
+    "_attributes": {
+      value: this._data.attributes
+    },
+    "Attributes": {
+      "get": function () { return this._attributes; }
+    }
+  });
+  Object.defineProperties(this, {
+    "_status": {
+      value: this._data.status
+    },
+    "Status": {
+      "get": function () { return this._status; }
+    }
+  });
+
+/*  
+  this._id = this._data._id;
+  this._ref = this._data.ref;
+  this._display = this._data.display;
+  this._attributes = this._data.attributes;
+  this._status = this._data.status;
+*/
+  debug("ctor(_id) = " + this._id);
 };
 
 Kulture.prototype = {
   
   /**
-    * @property {readonly} The ID field (from ref.id) of this kulture
+    * @property {readonly} The ID field (from _id) of this kulture
     */
+  
+  /*
   get Id() {
-    return this.ref.id;
+    return this._id;
+   },
+
+  get Ref() {
+    return this._ref;
+  },
+
+  get Display() {
+    return this._display;
   }
+  */
+
 }
 
 function ValidateThis( json ) {
@@ -89,13 +147,13 @@ var validate = validator({
   type: 'object',
   required: true,
   properties: {
+    id: { type: 'string' },
     ref: {
     	type: 'object',
     	properties: {
-    		id: { type: 'string' },
     		name: { type: 'string' }
     	},
-    	required: ['name', 'id']
+    	required: ['name']
     },
     display: {
     	type: 'object',
@@ -131,7 +189,7 @@ var validate = validator({
     	required: ['energy', 'health' ]
     }
   },
-  required: [ 'ref', 'display', 'attributes', 'status' ]
+  required: [ '_id', 'ref', 'display', 'attributes', 'status' ]
 })
 
 module.exports = { Kulture, ValidateThis, ValidationErrors };

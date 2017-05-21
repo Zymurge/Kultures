@@ -92,10 +92,18 @@ DbAccess.prototype = {
         var self = this;
         debugDbAccess("MongoInsertKulture: ", kulture.ref.id);
 		//return Promise.reject("Bomb");
-        if (! ( kulture.hasOwnProperty("ref")
-                && kulture.ref.hasOwnProperty("id") ) ) {
+        if (!(kulture.hasOwnProperty("ref")
+            && kulture.ref.hasOwnProperty("id"))) {
             debugDbAccess("MongoInsertKulture: missing ref.id property. Rejecting");
             return Promise.reject("object missing ref.id property");
+        }
+        if (kulture.hasOwnProperty("_id")
+            && kulture._id !== kulture.ref.id) {
+            debugDbAccess("MongoInsertKulture: existing _id doesn't match ref.id property. Rejecting");
+            return Promise.reject("_id mismatch with ref.id");
+        } else {
+            // use the designated ID field as the UID for Mongo
+            kulture._id = kulture.ref.id;
         }
         return new Promise( function (fulfill, reject) {
             self.ConnectToMongo()
@@ -125,7 +133,7 @@ DbAccess.prototype = {
 
     /**
      * Deletes a kulture object specified by the id string
-     * @param {string} kultureId - the id string of the object to delete. Expected to match kulture.ref.id
+     * @param {string} kultureId - the id string of the object to delete. Expected to match kulture._id
      * @returns {Promise} the id of the kulture object on success, or error message
      */
     MongoDeleteKulture: function (kultureId) {
@@ -135,7 +143,7 @@ DbAccess.prototype = {
             self.ConnectToMongo()
                 .then(function (connection) {
 	                kultureCollection = self.connection.collection('kultures');
-	                return kultureCollection.deleteOne({ 'ref.id': kultureId });
+	                return kultureCollection.deleteOne({ '_id': kultureId });
 	            } )
 	            .then( function (result) {
                     debugDbAccess(".. delete count: ", result.deletedCount);

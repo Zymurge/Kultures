@@ -1,30 +1,31 @@
-var assert = require( 'assert' );
-var Kulture = require('../bin/kulture_data').Kulture;
-var ValidateThis = require('../bin/kulture_data').ValidateThis;
-var ValidationErrors = require('../bin/kulture_data').ValidationErrors;
-var debug = require( 'debug' )( 'test:kulture' );
+let assert = require( 'assert' );
+let Kulture = require('../bin/kulture_data').Kulture;
+let ValidateThis = require('../bin/kulture_data').ValidateThis;
+let ValidationErrors = require('../bin/kulture_data').ValidationErrors;
+let debug = require( 'debug' )( 'test:kulture' );
 
-let chai = require('chai');
-let chaiAsPromised = require('chai-as-promised');
-chai.use(chaiAsPromised);
-let expect = chai.expect;
-let should = chai.should;
-
-describe( "Test JSON actually is JSON", function() {
-	it( "Can extract items", function(done) {
-		debug( "test_json is type " + typeof test_json );
-		assert.equal( typeof test_json, "object" );
-		assert.equal( typeof test_json.ref.id, "string" );
-		assert.equal( test_json.ref.id, '13' );
+describe( "Verify test JSON", function() {
+	it("is actually JSON", function (done) {
+		debug("test_json is type " + typeof test_json);
+		expect(test_json).to.be.a('object');
+		done();
+	})
+	it("has some of the expected properties and values", function (done) {
+		expect(test_json).to.have.property('_id');
+		expect(test_json).to.have.property('ref');
+		expect(test_json._id).to.equal('13');
+		expect(test_json).to.have.property('status');
+		expect(test_json).to.have.deep.property('status.health', 200);
 		done();
 	})
 });
 
-describe( "Ctor basics", function() {
+describe( "Kulture ctor basics", function() {
 	it( "Properly constructs object", function(done) {
 		let k = new Kulture( test_json );
-		expect( k ).not.to.be.null;
-		expect( typeof k ).to.equal( 'object' );
+		expect(k).ok;
+		expect(k).to.be.a('object');
+		expect(k).to.be.an.instanceof(Kulture);
 		done();
 	} );
 	it( "Throws on undefined argument", function(done) {
@@ -34,8 +35,11 @@ describe( "Ctor basics", function() {
 		expect( k ).to.throw( "called with undefined argument" );
 		done();
 	} );
-	it( "Validates ref node of json", function(done) {
-		ExpectJSONValidateToThrow( test_json, "ref.id" );
+	it("Enforces _id property (needed by Mongo)", function (done) {
+		ExpectJSONValidateToThrow(test_json, "_id");
+		done();
+	})
+	it("Validates ref node of json", function (done) {
 		ExpectJSONValidateToThrow( test_json, "ref.name" );
 		ExpectJSONValidateToThrow( test_json, "ref" );
 		done();
@@ -69,44 +73,58 @@ describe( "Ctor basics", function() {
 	})
 });
 
-describe( "accessors expose", function() {
+describe.only( "Kulture accessors", function() {
 	var k;
 	beforeEach( function() {
 		k = new Kulture( test_json );
-	} );
+	})
 
-	it( "ref property", function(done) {
-		expect( k.ref ).not.to.be.null;
-		expect( k.ref.id ).not.to.be.null;
-		expect( k.ref.id ).to.equal( '13' );
+	it("Id getter", function (done) {
+		expect(k.Id).ok;
+		expect(k.Id).to.equal(test_json._id);
 		done();
-	} );
-	it( "display property", function(done) {
-		expect( k.display ).not.to.be.null;
-		expect( k.display.loc ).not.to.be.null;
-		expect( k.display.loc.x ).not.to.be.null;
-		expect( k.display.loc.y ).not.to.be.null;
-		expect( k.display.loc.x ).to.equal( 1 );
-		expect( k.display.loc.y ).to.equal( 2 );
+	})
+	it("disallow _id change", function (done) {
+		k._id = "illegal op on _id";
+		expect(k.Id).ok;
+		expect(k.Id).to.equal(test_json._id);
 		done();
-	} );
-	it( "attributes property", function(done) {
-		expect( k.attributes ).not.to.be.null;
-		expect( k.attributes.growth ).not.to.be.null;
-		expect( k.attributes.growth['factor'] ).to.equal( 5 );
+	})
+	it("disallow Id change", function (done) {
+		k.Id = "illegal op on Id";
+		expect(k.Id).ok;
+		expect(k.Id).to.equal(test_json._id);
 		done();
-	} );
-	it( "status property", function(done) {
-		expect( k.status ).not.to.be.null;
-		expect( k.status.energy ).not.to.be.null;
-		expect( k.status.energy ).to.equal( 100 );
+	})
+	it("expose Ref property", function (done) {
+		expect(k.Ref).ok;
+		expect(k.Ref.name ).ok;
+		expect(k.Ref.name ).to.equal( test_json.ref.name );
 		done();
-	} );
-	it( "Id property", function(done) {
-		expect( k.Id ).not.to.be.null;
-		expect( k.Id ).to.equal( '13' );
+	})
+	it( "expose Display property", function(done) {
+		expect(k.Display).ok;
+		expect(k.Display.loc).ok;
+		expect(k.Display.loc.x).ok;
+		expect(k.Display.loc.y).ok;
+		expect(k.Display.loc.x).to.equal(test_json.display.loc.x);
+		expect(k.Display.loc.y).to.equal(test_json.display.loc.y);
 		done();
-	} );
+	})
+	it( "expose Attributes property", function(done) {
+		expect(k.Attributes ).ok;
+		expect(k.Attributes.growth ).ok;
+		expect(k.Attributes.growth.factor).ok;
+		expect(k.Attributes.growth.factor).to.equal(test_json.attributes.growth.factor);
+		done();
+	})
+	it( "expose Status property", function(done) {
+		expect(k.Status).ok;
+		expect(k.Status.energy).ok;
+		expect(k.Status.energy).to.equal(test_json.status.energy);
+		done();
+	})
+
 });
 
 describe( "Validator validation", function() {
@@ -133,7 +151,7 @@ describe( "IsInvalid function", function() {
 	it( "Returns true, with accurate reason, on invalid JSON", function(done) {
 		var bad_json = RemoveNodeFromJSON( test_json, "attributes.growth" );
 		var result = ValidationErrors( bad_json );
-		expect( result ).not.to.be.null;
+		expect( result ).ok;
 		expect( result.field ).to.contain( 'attributes.growth' );
 		done();	
 	});
@@ -157,8 +175,8 @@ function RemoveNodeFromJSON( good_json, deleteNode ) {
 
 var test_json =  
 	{
+		_id: '13',
 		ref: {
-			id: '13',
 			name: 'my name'
 		},
 		display: {

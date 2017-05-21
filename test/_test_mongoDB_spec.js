@@ -31,7 +31,6 @@ let testKulture = {
     }
  };
 
-
 describe("DbAccess constructor", function () {
 	it("creates values properly with default timeout", function (done) {
 		let db = new mongoDB.DbAccess(testMongoUrl);
@@ -119,7 +118,7 @@ describe( "With Mongodb running", function() {
 					expect(error, "Error thrown when success expected").not.ok; // force fail
 				})
 		});
-		it("returns on error on attempt to insert existing id", function () {
+		it("returns an error on attempt to insert existing id", function () {
 			return client.MongoInsertKulture(testKulture)
 				.then((id) => {
 					debug("successfully inserted: ", id);
@@ -135,6 +134,20 @@ describe( "With Mongodb running", function() {
 					debug("Caught (expected) error: ", error);
 					expect(error).ok;
 					expect(error).to.equal('duplicate id');
+				})
+		});
+		it("returns an error on to insert with existing _id field not matching ref.id", function () {
+			let mismatchKulture = BuildKultureJSON(99, 98, 97);
+			mismatchKulture._id = "no match";
+			return client.MongoInsertKulture(mismatchKulture)
+				.then((kulture) => {
+					debug("success when error expected on _id mismatch");
+					expect(result, "Success returned when error expected").not.ok; // force fail				
+				})
+				.catch((error) => {
+					debug("Caught (expected) error: ", error);
+					expect(error).ok;
+					expect(error).to.equal("_id mismatch with ref.id");
 				})
 		});
 		it("handles mongo connection errors on insert", function () {
@@ -382,7 +395,9 @@ let MongoClean = function( collection ) {
 	} );
 }
 
-let MongoAdd = function( kulture ) {
+let MongoAdd = function (kulture) {
+	// ensure that the _id field for Mongo is synced
+	kulture._id = kulture.ref.id;
 	return new Promise( function( fulfill, reject ) {
 		MongoClient.connect( testMongoUrl, function( err, db ) {
 			if( err ) { 
