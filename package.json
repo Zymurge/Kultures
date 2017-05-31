@@ -6,6 +6,7 @@
     "start": "node ./bin/www",
     "startserver": "start spec\\start_mock_server.cmd && timeout 3",
     "test": "call ./test/all_tests.cmd",
+    "test_units": "call node_modules/.bin/mocha test/test*",
     "test_mongo": "call node_modules/.bin/mocha test/_test*",
     "cover": "istanbul cover --include-all-sources node_modules/mocha/bin/_mocha test/test* && start coverage\\lcov-report\\index.html",
     "cover_mongo": "istanbul cover --include-all-sources node_modules/mocha/bin/_mocha test/_test* && start coverage\\lcov-report\\index.html",

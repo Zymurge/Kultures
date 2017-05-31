@@ -8,8 +8,8 @@ let _ = require( 'underscore' );
 let testMongoUrl = "mongodb://127.0.0.1";
 let testKultureCollection = "kultures"; 
 let testKulture = {
-    ref: {
-      id: '13',
+	_id: '13',
+	ref: {
       name: 'test kulture'
     },
     display: {
@@ -105,13 +105,13 @@ describe( "With Mongodb running", function() {
 			return client.MongoInsertKulture(testKulture)
 				.then((id) => {
 					debug("MongoInsertKulture successfully inserted: ");
-					expect(id, "Return value should be kulture ID").to.equal(testKulture.ref.id);
-					return client.MongoFetchId(testKulture.ref.id);
+					expect(id, "Return value should be kulture ID").to.equal(testKulture._id);
+					return client.MongoFetchId(testKulture._id);
 				})
 				.then((kulture) => {
 					debug("successfully fetched: ", kulture);
 					expect(kulture).ok;
-					expect(kulture.ref.id).to.equal(testKulture.ref.id);
+					expect(kulture._id).to.equal(testKulture._id);
 				})
 				.catch((error) => {
 					debug("Caught error: ", error);
@@ -122,7 +122,7 @@ describe( "With Mongodb running", function() {
 			return client.MongoInsertKulture(testKulture)
 				.then((id) => {
 					debug("successfully inserted: ", id);
-					expect(id).to.equal(testKulture.ref.id);
+					expect(id).to.equal(testKulture._id);
 					// if successful try the same insert again
 					return client.MongoInsertKulture(testKulture);
 				})
@@ -134,20 +134,6 @@ describe( "With Mongodb running", function() {
 					debug("Caught (expected) error: ", error);
 					expect(error).ok;
 					expect(error).to.equal('duplicate id');
-				})
-		});
-		it("returns an error on to insert with existing _id field not matching ref.id", function () {
-			let mismatchKulture = BuildKultureJSON(99, 98, 97);
-			mismatchKulture._id = "no match";
-			return client.MongoInsertKulture(mismatchKulture)
-				.then((kulture) => {
-					debug("success when error expected on _id mismatch");
-					expect(result, "Success returned when error expected").not.ok; // force fail				
-				})
-				.catch((error) => {
-					debug("Caught (expected) error: ", error);
-					expect(error).ok;
-					expect(error).to.equal("_id mismatch with ref.id");
 				})
 		});
 		it("handles mongo connection errors on insert", function () {
@@ -163,7 +149,7 @@ describe( "With Mongodb running", function() {
 					expect(error).to.equal("MongoDb error code: -1");
 				})
 		});
-		it("returns an error when given an object without a ref.id property as input", function () {
+		it("returns an error when given an object without a _id property as input", function () {
 			let iAintNoKulture = {
 				ref: {
 					notAnId: '-13',
@@ -186,7 +172,7 @@ describe( "With Mongodb running", function() {
 				.catch((error) => {
 					debug("Caught (expected) error: ", error);
 					expect(error).ok;
-					expect(error).to.equal('object missing ref.id property');
+					expect(error).to.equal('object missing _id property');
 				})
 		});
 	});
@@ -195,12 +181,12 @@ describe( "With Mongodb running", function() {
 		it("can delete the preloaded record", function () {
 			return MongoAdd(testKulture)
 				.then(() => {
-					return client.MongoDeleteKulture(testKulture.ref.id);
+					return client.MongoDeleteKulture(testKulture._id);
 				})
 				.then((id) => {
-					debug("successfully deleted: ", testKulture.ref.id);
+					debug("successfully deleted: ", testKulture._id);
 					expect(id).ok;
-					expect(id).to.equal(testKulture.ref.id);
+					expect(id).to.equal(testKulture._id);
 				})
 				.catch((error) => {
 					debug("Caught error: ", error);
@@ -240,14 +226,14 @@ describe( "With Mongodb running", function() {
 				.then(() => {
 					debug("MongoFetchId: successfully added test record");
 					debug("MongoFetchId: calling client: ", client);
-					let result = client.MongoFetchId(testKulture.ref.id);
+					let result = client.MongoFetchId(testKulture._id);
 					debug("MongoFetchId: result: ", result);
 					return result;
 				})
 				.then((kulture) => {
 					debug("MongoFetchId: successfully fetched: ", kulture);
 					expect(kulture).ok;
-					expect(kulture.ref.id).to.equal(testKulture.ref.id);
+					expect(kulture._id).to.equal(testKulture._id);
 				})
 				.catch((error) => {
 					debug("MongoFetchId: Caught error: ", error);
@@ -292,13 +278,13 @@ describe( "With Mongodb running", function() {
 					return client.MongoUpdateKulture(kultureToUpdate);
 				})
 				.then((id) => {
-					debug("successfully updated: ", kultureToUpdate.ref.id);
+					debug("successfully updated: ", kultureToUpdate._id);
 					expect(id).ok;
 					return fetchKulture = client.MongoFetchId(id);
 				})
 				.then((kulture) => {
 					debug("fetch kulture to validate update");
-					expect(kulture.ref.id).to.equal(kultureToUpdate.ref.id);
+					expect(kulture._id).to.equal(kultureToUpdate._id);
 					expect(kulture.ref.name).to.equal(kultureToUpdate.ref.name);
 					expect(kulture.attributes.energy).to.equal(kultureToUpdate.attributes.energy);
 				})
@@ -319,7 +305,7 @@ describe( "With Mongodb running", function() {
 					expect(error).to.equal("id not found");
 				});
 		});
-		it("returns an error when given an object without a ref.id property as input", function () {
+		it("returns an error when given an object without a _id property as input", function () {
 			let iAintNoKulture = {
 				ref: {
 					notAnId: '-13',
@@ -336,12 +322,12 @@ describe( "With Mongodb running", function() {
 			};
 			return client.MongoUpdateKulture(iAintNoKulture)
 				.then((kulture) => {
-					expect(result, "Success when error expected. No ref.id property").not.ok; // force fail				
+					expect(result, "Success when error expected. No _id property").not.ok; // force fail				
 				})
 				.catch((error) => {
 					debug("Caught (expected) error: ", error);
 					expect(error).ok;
-					expect(error).to.equal('object missing ref.id property');
+					expect(error).to.equal('object missing _id property');
 				})
 		});
 		it("handles mongo connection errors on update", function () {
@@ -396,8 +382,6 @@ let MongoClean = function( collection ) {
 }
 
 let MongoAdd = function (kulture) {
-	// ensure that the _id field for Mongo is synced
-	kulture._id = kulture.ref.id;
 	return new Promise( function( fulfill, reject ) {
 		MongoClient.connect( testMongoUrl, function( err, db ) {
 			if( err ) { 
@@ -420,8 +404,8 @@ let BuildKultureJSON = function( x, y, z ) {
 	let id = x + '.' + y + '.' + z;
 	let name = 'I am ' + id;
 	let json = 	{
+		_id: id,
 		ref: {
-			id: id,
 			name: name
 		},
 		display: {

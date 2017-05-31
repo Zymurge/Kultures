@@ -124,6 +124,11 @@ describe( "Kulture accessors", function() {
 		expect(k.Status.energy).to.equal(test_json.status.energy);
 		done();
 	})
+	it("expose full JSON", function (done) {
+		expect(k.ToJSON).ok;
+		expect(k.ToJSON).to.deep.equal(test_json);
+		done();
+	})
 
 });
 

@@ -1,5 +1,7 @@
 let DB = require('../bin/dao');
 let mongoDB = require('../bin/mongoDB');
+let Kulture = require('../bin/kulture_data').Kulture;
+
 let debug = require('debug')('test:DAO');
 let MongoClient = require('mongodb').MongoClient;
 let Promise = require( 'promise' );
@@ -7,9 +9,9 @@ let _ = require( 'underscore' );
 
 let testMongoUrl = "mongodb://127.0.0.1";
 let testKultureCollection = "kultures"; 
-let testKulture = {
+let testKultureJSON = {
+    _id: '13',
     ref: {
-      id: '13',
       name: 'test kulture'
     },
     display: {
@@ -29,7 +31,8 @@ let testKulture = {
       energy: 100,
       health: 200
     }
- };
+};
+let testKulture = new Kulture(testKultureJSON);
 
 describe("DbAccess constructor", function () {
 	it( "creates values properly with default timeout", function( done ) {
@@ -70,20 +73,25 @@ describe( "GetKultureById", function() {
 		dao = new DB.DAO( db );
 		expect( dao ).ok;
 		expect( dao.db ).to.equal( db );
-	} );
+	})
 	it( "fulfills on success", function() {
-		mfiStub.returns( Promise.resolve( testKulture ) );
-		return dao.GetKultureById( testKulture.ref.id )
+		mfiStub.returns( Promise.resolve( testKultureJSON ) );
+		return dao.GetKultureById( testKultureJSON._id )
 			.then( ( kulture ) => {
 				debug( "Promise fulfilled with payload: ", kulture );
-				expect( kulture ).ok;
-				expect( kulture ).to.equal( testKulture );
+				expect(kulture).ok;
+                expect(kulture).to.be.instanceOf(Kulture);
+                expect(kulture.Id).to.equal(testKulture.Id);
+                expect(kulture.Ref).to.deep.equal(testKulture.Ref);
+                expect(kulture.Display).to.deep.equal(testKulture.Display);
+                expect(kulture.Attributes).to.deep.equal(testKulture.Attributes);
+                expect(kulture.Status).to.deep.equal(testKulture.Status);
 			} )
 			.catch( ( error ) => {
 				debug( "Caught error: ", error );
-				expect( error ).not.ok; // force fail
+                expect(error, "Error thrown when success expected").not.ok; // force fail
 			} ); 
-	} );	
+	})	
 	it( "rejects on id not found in collection", function() {
 		mfiStub.returns( Promise.resolve( { } ) );
 		return dao.GetKultureById( 'homeless id' )
@@ -95,19 +103,19 @@ describe( "GetKultureById", function() {
 				debug( "Caught (expected) error: ", error );
                 ValidateJSONError(error,'GetKultureById','homeless id','id not found');
 			} ); 
-	} );
+	})
     it("gracefully fails null id", function () {
         mfiStub.resetBehavior();
         return dao.GetKultureById(null)
             .then((result) => {
                 debug("Promise fulfilled. Not sure why: ", result);
-                expect(result).not.ok; // force fail
+                expect(result, "Success returned when error expected").not.ok; // force fail
            })
             .catch((error) => {
                 debug("Caught (expected) error: ", error);
                 ValidateJSONError(error, 'GetKultureById', 'none', 'id argument is null');
             });
-    });
+    })
     it("gracefully fails DB error", function () {
         let errMsg = "MongoDB error code: 999999";
         mfiStub.rejects(errMsg);
@@ -117,7 +125,7 @@ describe( "GetKultureById", function() {
          return dao.GetKultureById('fail')
             .then((result) => {
                 debug("Promise fulfilled. Not sure why: ", result);
-                expect(result).not.ok; // force fail
+                expect(result, "Success returned when error expected").not.ok; // force fail
             })
             .catch((error) => {
                 // Unwrap here
@@ -125,32 +133,32 @@ describe( "GetKultureById", function() {
                 debug("Caught (expected) error: ", error.message);
                 ValidateJSONError(error, 'GetKultureById', 'fail', errMsg);
             });
-    });
-} );
+    })
+});
 
-describe( "InsertKulture", function() {
-	let db, dao;
-	let mikStub = sinon.stub( mongoDB.DbAccess.prototype, "MongoInsertKulture" );
-	beforeEach( function() {
-		db = new mongoDB.DbAccess("mongodb://dummy" );
-		dao = new DB.DAO( db );
-		expect( dao ).ok;
-		expect( dao.db ).to.equal( db );
-	} );
-	it( "fulfills on success", function() {		
-		mikStub.returns( Promise.resolve( "this should fail" ) );
-		mikStub.returns( Promise.resolve( testKulture.ref.id ) );
-		return dao.InsertKulture( testKulture )
-			.then( ( result ) => {
-				debug( "Promise fulfilled with payload: ", result );
-				expect( result ).ok;
-				expect( result ).to.equal( testKulture.ref.id );
-			} )
-			.catch( ( error ) => {
-				debug( "Caught error: ", error );
+// TODO: Change to send Kulture as object instead of JSON
+describe("InsertKulture", function () {
+    let db, dao;
+    let mikStub = sinon.stub(mongoDB.DbAccess.prototype, "MongoInsertKulture");
+    beforeEach(function () {
+        db = new mongoDB.DbAccess("mongodb://dummy");
+        dao = new DB.DAO(db);
+        expect(dao).ok;
+        expect(dao.db).to.equal(db);
+    });
+    it("fulfills on success", function () {
+        mikStub.returns(Promise.resolve(testKultureJSON._id));
+        return dao.InsertKulture(testKulture)
+            .then((result) => {
+                debug("Promise fulfilled with payload: ", result);
+                expect(result).ok;
+                expect(result).to.equal(testKulture.Id);
+            })
+            .catch((error) => {
+                debug("Caught error: ", error);
                 expect(error, "Error thrown when success expected").not.ok; // force fail
-			} ); 
-	} );
+            });
+    });
     it("gracefully fails null kulture arg", function () {
         mikStub.resetBehavior();
         return dao.InsertKulture(null)
@@ -161,6 +169,18 @@ describe( "InsertKulture", function() {
             .catch((error) => {
                 debug("Caught (expected) error: ", error);
                 ValidateJSONError(error, 'InsertKulture', 'none', 'kulture argument is null');
+            });
+    });
+    it("gracefully fails non-kulture object arg", function () {
+        mikStub.resetBehavior();
+        return dao.InsertKulture(testKultureJSON)
+            .then((result) => {
+                debug("Promise fulfilled. Not sure why: ", result);
+                expect(result, "Error thrown when success expected").not.ok; // force fail
+            })
+            .catch((error) => {
+                debug("Caught (expected) error: ", error);
+                ValidateJSONError(error, 'InsertKulture', 'none', "kulture argument is not a Kulture instance");
             });
     });
     it("handles and notifies on duplicate ID", function () {
@@ -174,7 +194,7 @@ describe( "InsertKulture", function() {
             .catch((error) => {
                 error.message = error.message.message;
                 debug("Caught (expected) error: ", error.message);
-                ValidateJSONError(error, 'InsertKulture', testKulture.ref.id, errMsg);
+                ValidateJSONError(error, 'InsertKulture', testKulture.Id, errMsg);
             });
     });
     it("gracefully fails DB error", function () {
@@ -207,12 +227,12 @@ describe( "DeleteKultureById", function() {
         expect(dao.db).to.equal(db);
     });
 	it( "fulfills on success", function() {
-		mdkStub.resolves( testKulture.ref.id );
-		return dao.DeleteKultureById( testKulture.ref.id )
+		mdkStub.resolves( testKultureJSON._id );
+		return dao.DeleteKultureById( testKultureJSON._id )
 			.then( ( result ) => {
 				debug( "Promise fulfilled with payload: ", result );
 				expect( result ).ok;
-				expect( result ).to.equal( testKulture.ref.id );
+				expect( result ).to.equal( testKultureJSON._id );
 			} )
 			.catch( ( error ) => {
 				debug( "Caught error: ", error );
@@ -235,7 +255,7 @@ describe( "DeleteKultureById", function() {
 		return dao.DeleteKultureById( null )
 			.then( ( result ) => {
 				debug( "Promise fulfilled. Not sure why: ", result );
-                expect(result, "Error thrown when success expected").not.ok; // force fail
+                expect(result, "Success returned when error expected").not.ok; // force fail
 			} )
 			.catch( ( error ) => {
                 debug("Caught (expected) error: ", error);
@@ -251,7 +271,7 @@ describe( "DeleteKultureById", function() {
         return dao.DeleteKultureById('fail')
             .then((result) => {
                 debug("Promise fulfilled. Not sure why: ", result);
-                expect(result, "Error thrown when success expected").not.ok; // force fail
+                expect(result, "Success returned when error expected").not.ok; // force fail
             })
             .catch((error) => {
                 // Unwrap here
@@ -262,6 +282,7 @@ describe( "DeleteKultureById", function() {
     });
 });
 
+// TODO: Change to send Kulture as object instead of JSON
 describe("UpdateKulture", function () {
     let db, dao;
     let mukStub = sinon.stub(mongoDB.DbAccess.prototype, "MongoUpdateKulture");
@@ -272,16 +293,16 @@ describe("UpdateKulture", function () {
         expect(dao.db).to.equal(db);
     });
     it("fulfills on success", function () {
-        mukStub.resolves(testKulture.ref.id);
-        return dao.UpdateKulture(testKulture.ref.id)
+        mukStub.resolves(testKultureJSON._id);
+        return dao.UpdateKulture(testKulture)
             .then((result) => {
                 debug("Promise fulfilled with payload: ", result);
                 expect(result).ok;
-                expect(result).to.equal(testKulture.ref.id);
+                expect(result).to.equal(testKulture.Id);
             })
             .catch((error) => {
                 debug("Caught error: ", error);
-                expect(error).not.ok; // force fail
+                expect(error, "Error thrown when success expected").not.ok; // force fail
             });
     });
     it("rejects on id not found in collection", function () {
@@ -293,12 +314,12 @@ describe("UpdateKulture", function () {
         return dao.UpdateKulture(testKulture)
             .then((result) => {
                 debug("Promise fulfilled with payload: ", result);
-                expect(result).to.be.null;
+                expect(result, "Success returned when error expected").not.ok; // force fail
             })
             .catch((error) => {
                 error.message = error.message.message;
                 debug("Caught (expected) error: ", error);
-                ValidateJSONError(error, 'UpdateKulture', testKulture.ref.id, errMsg );
+                ValidateJSONError(error, 'UpdateKulture', testKultureJSON._id, errMsg );
             });
     });
     it("gracefully fails null kulture arg", function () {
@@ -306,11 +327,23 @@ describe("UpdateKulture", function () {
         return dao.UpdateKulture(null)
             .then((result) => {
                 debug("Promise fulfilled. Not sure why: ", result);
-                expect(result).not.ok; // force fail
+                expect(result, "Success returned when error expected").not.ok; // force fail
             })
             .catch((error) => {
                 debug("Caught (expected) error: ", error);
                 ValidateJSONError(error, 'UpdateKulture', 'none', "kulture argument is null");
+            });
+    });
+    it("gracefully fails non kulture object arg", function () {
+        mukStub.resetBehavior();
+        return dao.UpdateKulture(testKultureJSON)
+            .then((result) => {
+                debug("Promise fulfilled. Not sure why: ", result);
+                expect(result, "Success returned when error expected").not.ok; // force fail
+            })
+            .catch((error) => {
+                debug("Caught (expected) error: ", error);
+                ValidateJSONError(error, 'UpdateKulture', 'none', "kulture argument is not a Kulture instance");
             });
     });
     it("gracefully fails DB error", function () {
@@ -328,7 +361,7 @@ describe("UpdateKulture", function () {
                 // Unwrap here
                 error.message = error.message.message;
                 debug("Caught (expected) error: ", error.message);
-                ValidateJSONError(error, 'UpdateKulture', testKulture.ref.id, errMsg);
+                ValidateJSONError(error, 'UpdateKulture', testKultureJSON._id, errMsg);
             });
     });
 });

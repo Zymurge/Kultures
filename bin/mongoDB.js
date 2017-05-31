@@ -54,7 +54,7 @@ DbAccess.prototype = {
 
     /**
      * Retrieves a kulture object specified by the id string
-     * @param {string} id - the id string to search on. Expected to match kulture.ref.id
+     * @param {string} id - the id string to search on. Expected to match kulture._id
      * @returns {Promise} the kulture json if found, an empty object if not, or error message
      */
 	MongoFetchId: function (id) {
@@ -64,7 +64,7 @@ DbAccess.prototype = {
             self.ConnectToMongo()
                 .then( function (connection) {
 	                kultureCollection = self.connection.collection('kultures');
-	                return kultureCollection.find({ 'ref.id': id }).limit(1).next();
+	                return kultureCollection.find({ '_id': id }).limit(1).next();
 	            })
                 .then(function (kulture) {
 	                debugDbAccess(".. found: ", kulture);
@@ -83,28 +83,20 @@ DbAccess.prototype = {
 
     /**
      * Inserts a kulture object into the 'kultures' collection. Enforces unique id within collection,
-     * based on the ref.id property.
+     * based on the _id property.
      * @param {object} kulture - the kulture object as JSON
      * @returns {Promise} the id of the kulture object on success, or error message
-     * @throws if {@link kulture} doesn't contain a ref.id property
+     * @throws if {@link kulture} doesn't contain a _id property
      */
     MongoInsertKulture: function (kulture) {
+        //return Promise.reject("Bomb");
         var self = this;
-        debugDbAccess("MongoInsertKulture: ", kulture.ref.id);
-		//return Promise.reject("Bomb");
-        if (!(kulture.hasOwnProperty("ref")
-            && kulture.ref.hasOwnProperty("id"))) {
-            debugDbAccess("MongoInsertKulture: missing ref.id property. Rejecting");
-            return Promise.reject("object missing ref.id property");
+        // validate has an _id field to prevent Mongo from adding one
+        if ( ! kulture.hasOwnProperty("_id") ) {
+            debugDbAccess("MongoInsertKulture: missing _id property. Rejecting");
+            return Promise.reject("object missing _id property");
         }
-        if (kulture.hasOwnProperty("_id")
-            && kulture._id !== kulture.ref.id) {
-            debugDbAccess("MongoInsertKulture: existing _id doesn't match ref.id property. Rejecting");
-            return Promise.reject("_id mismatch with ref.id");
-        } else {
-            // use the designated ID field as the UID for Mongo
-            kulture._id = kulture.ref.id;
-        }
+        debugDbAccess("MongoInsertKulture: ", kulture._id);
         return new Promise( function (fulfill, reject) {
             self.ConnectToMongo()
                 .then( function (connection) {
@@ -114,7 +106,7 @@ DbAccess.prototype = {
         	    })
             	.then( function (result) {
                 	debugDbAccess(".. insert count: ", result.insertedCount);
-	                fulfill(kulture.ref.id);
+	                fulfill(kulture._id);
 	            })
     	        .catch( function (err) {
 	               debugDbAccess( "mongo insert error: ", err['name'], err['code'], err['message'] );
@@ -164,18 +156,17 @@ DbAccess.prototype = {
     },
 
     /**
-     * Updates a kulture object in the 'kultures' collection. Does not allow change of kulture.ref.id.
-     * @param {object} kulture - the kulture object that is replacing the previous object with a matching kulture.ref.id
+     * Updates a kulture object in the 'kultures' collection. Does not allow change of kulture._id.
+     * @param {object} kulture - the kulture object that is replacing the previous object with a matching kulture._id
      * @returns {Promise} the id of the kulture object on success, or error message
-     * @throws if {@link kulture} doesn't contain a ref.id property
+     * @throws if {@link kulture} doesn't contain a _id property
      */
     MongoUpdateKulture: function (kulture) {
         var self = this;
         debugDbAccess("MongoUpdateKulture: ", kulture);
-        if (!(kulture.hasOwnProperty("ref")
-            && kulture.ref.hasOwnProperty("id"))) {
-            debugDbAccess("MongoUpdateKulture: missing ref.id property. Rejecting");
-            return Promise.reject("object missing ref.id property");
+        if (! kulture.hasOwnProperty("_id") ) {
+            debugDbAccess("MongoUpdateKulture: missing _id property. Rejecting");
+            return Promise.reject("object missing _id property");
         }
         return new Promise(function (fulfill, reject) {
             self.ConnectToMongo()
@@ -183,7 +174,7 @@ DbAccess.prototype = {
                     kultureCollection = connection.collection(KulturesCollectionName);
                     debugDbAccess("MongoUpdateKulture: connected. Created collection: ", KulturesCollectionName);
                     return kultureCollection.update(
-                        { "ref.id": kulture.ref.id },
+                        { "_id": kulture._id },
                         { $set: kulture }
                     );
                 })
@@ -193,7 +184,7 @@ DbAccess.prototype = {
                     if (result.result.ok == 1 && result.result.nModified == 0) {
                         reject("id not found");
                     }
-                    fulfill(kulture.ref.id);
+                    fulfill(kulture._id);
                 })
                 .catch(function (err) {
                     debugDbAccess("mongo insert error: ", err['name'], err['code'], err['message']);

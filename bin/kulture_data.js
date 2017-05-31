@@ -8,8 +8,8 @@ var debug = require('debug')('kulture:kulture_data');
  * @param {Object} data - an object with that adheres to kultures schema in the example below
  * @example
   {
+    _id: string, // MongoDb unique identifier
     ref: {
-      id: string,
       name: string
     },
     display: {
@@ -35,21 +35,21 @@ var Kulture = function Kulture(data) {
   _display = null;
 
   let debug = require('debug')('kulture:kulture_object');
-  debug( "ctor arg = " + data );
+  debug("ctor arg = " + data);
 
-  if( typeof data === 'undefined' )
-    throw new TypeError( 'called with undefined argument' );
+  if (typeof data === 'undefined')
+    throw new TypeError('called with undefined argument');
 
-	if ( ! ( this instanceof Kulture ) )
-    throw new Error( "Kulture must be called with the new keyword" );
- 
-	let isValid = validate( data );
-	if( ! isValid ) {
-		throw new TypeError( validate.errors[0].message + ': ' + validate.errors[0].field );
-	}
+  if (!(this instanceof Kulture))
+    throw new Error("Kulture must be called with the new keyword");
+
+  let isValid = validate(data);
+  if (!isValid) {
+    throw new TypeError(validate.errors[0].message + ': ' + validate.errors[0].field);
+  }
 
   // force deep copy
-  this._data = JSON.parse( JSON.stringify( data ) );
+  this._data = JSON.parse(JSON.stringify(data));
   // map sections up one level to object attributes
   Object.defineProperties(this, {
     "_id": {
@@ -57,71 +57,44 @@ var Kulture = function Kulture(data) {
     },
     "Id": {
       "get": function () { return this._id; }
-    }
-  });
-  Object.defineProperties(this, {
+    },
     "_ref": {
       value: this._data.ref
     },
     "Ref": {
       "get": function () { return this._ref; }
-    }
-  });
-  Object.defineProperties(this, {
+    },
     "_display": {
       value: this._data.display
     },
     "Display": {
       "get": function () { return this._display; }
-    }
-  });
-  Object.defineProperties(this, {
+    },
     "_attributes": {
       value: this._data.attributes
     },
     "Attributes": {
       "get": function () { return this._attributes; }
-    }
-  });
-  Object.defineProperties(this, {
+    },
     "_status": {
       value: this._data.status
     },
     "Status": {
       "get": function () { return this._status; }
+    },
+    "_data": {
+      value: this._data
+    },
+    "ToJSON": {
+      "get": function () { return this._data; }
     }
   });
-
-/*  
-  this._id = this._data._id;
-  this._ref = this._data.ref;
-  this._display = this._data.display;
-  this._attributes = this._data.attributes;
-  this._status = this._data.status;
-*/
+  
   debug("ctor(_id) = " + this._id);
 };
 
 Kulture.prototype = {
   
-  /**
-    * @property {readonly} The ID field (from _id) of this kulture
-    */
-  
-  /*
-  get Id() {
-    return this._id;
-   },
-
-  get Ref() {
-    return this._ref;
-  },
-
-  get Display() {
-    return this._display;
-  }
-  */
-
 }
 
 function ValidateThis( json ) {
