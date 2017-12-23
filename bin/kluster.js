@@ -127,20 +127,26 @@ Kluster.prototype = {
   },
 
   /**
-   * Finds the (up to) 6 immediately surrounding tiles
+   * Finds the (up to) 6 immediately surrounding tiles. 
    * @param {string} id the id of the Kulture in the Kluster to find neighbors for
-   * @returns {object} references to the surrounding neighbors accessed by their encoded relationship
+   * @returns {object} references to the surrounding neighbors accessed by their encoded relationship or null if
+   *  the neighbor exceeds the Kluster boundary. The encoding is a three character string for the relative direction
+   *  on the xyz axises. Encoding values are 0, - and +.
+   *  For example result['0+-'] for the kulture at 10,10,10 would be 10,11,9
    */
   GetNeighbors: function( id ) {
     debug( "GetNeighbors: " + JSON.stringify( id ) );
+    let centerKulture = this.GetById(id);
+    if (!centerKulture) { return null }; // short circuit on missing lookup for center
+
+    let centerLoc = centerKulture.Display.loc;
     let result = {};
-    let centerLoc = this.GetById( id ).Display.loc;
-    result['0pm'] = this.GetByLoc( { x: centerLoc.x, y: centerLoc.y + 1, z: centerLoc.z - 1 } );
-    result['0mp'] = this.GetByLoc( { x: centerLoc.x, y: centerLoc.y - 1, z: centerLoc.z + 1 } );
-    result['p0m'] = this.GetByLoc( { x: centerLoc.x + 1, y: centerLoc.y, z: centerLoc.z - 1 } );
-    result['pm0'] = this.GetByLoc( { x: centerLoc.x + 1, y: centerLoc.y - 1, z: centerLoc.z } );
-    result['mp0'] = this.GetByLoc( { x: centerLoc.x - 1, y: centerLoc.y + 1, z: centerLoc.z } );
-    result['m0p'] = this.GetByLoc( { x: centerLoc.x - 1, y: centerLoc.y, z: centerLoc.z + 1 } );
+    result['0+-'] = this.GetByLoc( { x: centerLoc.x, y: centerLoc.y + 1, z: centerLoc.z - 1 } );
+    result['0-+'] = this.GetByLoc( { x: centerLoc.x, y: centerLoc.y - 1, z: centerLoc.z + 1 } );
+    result['+0-'] = this.GetByLoc( { x: centerLoc.x + 1, y: centerLoc.y, z: centerLoc.z - 1 } );
+    result['+-0'] = this.GetByLoc( { x: centerLoc.x + 1, y: centerLoc.y - 1, z: centerLoc.z } );
+    result['-+0'] = this.GetByLoc( { x: centerLoc.x - 1, y: centerLoc.y + 1, z: centerLoc.z } );
+    result['-0+'] = this.GetByLoc( { x: centerLoc.x - 1, y: centerLoc.y, z: centerLoc.z + 1 } );
     return result;
   }
 }

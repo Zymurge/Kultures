@@ -3,16 +3,17 @@ var Kulture = require('../bin/kulture_data').Kulture;
 var Kluster = require('../bin/kluster').Kluster;
 var debug = require( 'debug')('test:kluster');
 
-let chai = require('chai');
+/*let chai = require('chai');
 let chaiAsPromised = require('chai-as-promised');
 chai.use(chaiAsPromised);
 let expect = chai.expect;
 let should = chai.should;
+*/
 
-describe( "Helper functions:", function() {
+describe( "Kluster: Helper functions:", function() {
 	it( "BuildKultureArray works", function(done) {
 		let k = BuildKultureArray(-2, 3);
-		expect(k).not.to.be.false;
+		expect(k).ok;
 		expect(k.length).to.equal(216);
 		expect(k[0]).ok;
 		expect(k[0].Ref).ok;
@@ -25,7 +26,7 @@ describe( "Helper functions:", function() {
 	})
 });
 
-describe( "ctor basics", function() {
+describe( "Kluster: ctor basics", function() {
 	it( "creates the right object type", function(done) {
 		let k = new Kluster( BuildKultureArray( -1, 1 ) );
 		expect( typeof k ).to.equal( 'object' );
@@ -67,7 +68,7 @@ describe( "ctor basics", function() {
 	})
 } );
 
-describe( "GetById", function() {
+describe( "Kluster: GetById", function() {
 	let k;
 	beforeEach( function() {
 		k = new Kluster( BuildKultureArray( -1, 1 ) );
@@ -98,7 +99,7 @@ describe( "GetById", function() {
 	} );
 } );
 
-describe( "GetByLoc", function() {
+describe( "Kluster: GetByLoc", function() {
 	let k;
 	beforeEach( function() {
 		k = new Kluster( BuildKultureArray( 0, 1 ) );
@@ -134,7 +135,7 @@ describe( "GetByLoc", function() {
 	} );
 } );
 
-describe( "AddKulture", function() {
+describe( "Kluster: AddKulture", function() {
 	var k;
 	beforeEach( function() {
 		k = new Kluster( BuildKultureArray( -1, 1 ) );
@@ -168,7 +169,7 @@ describe( "AddKulture", function() {
 	} );
 } );
 
-describe( "DeleteKultureById", function() {
+describe( "Kluster: DeleteKultureById", function() {
 	let k;
 	beforeEach( function() {
 		k = new Kluster( BuildKultureArray( -1, 1 ) );
@@ -205,93 +206,116 @@ describe( "DeleteKultureById", function() {
 /*
   Returns object:
   {
-	0pm: id,
-	0mp: id,
-	p0m: id,
-	pm0: id,
-	m0p: id,
-	mp0: id
+	0+-: id,
+	0-+: id,
+	+0-: id,
+	+-0: id,
+	-0+: id,
+	-+0: id
   }
  */
-describe( "GetNeighbors", function() {
+describe("Kluster: GetNeighbors", function () {
 	let k;
-	beforeEach( function() {
-		k = new Kluster( BuildKultureArray( -1, 1 ) );
-	} );
-	it( "positive test case", function(done) {
-		let neighbors = k.GetNeighbors( '0.0.0' );
-		expect( neighbors['0pm'] ).not.to.be.null;
-		expect( neighbors['0pm'].Id ).not.to.be.null;
-		expect( neighbors['0pm'].Id ).to.equal( '0.1.-1' );
-		expect( neighbors['m0p'] ).not.to.be.null;
-		expect( neighbors['m0p'].Id ).not.to.be.null;
-		expect( neighbors['m0p'].Id ).to.equal( '-1.0.1' );
-		expect( neighbors['pm0'] ).not.to.be.null;
-		expect( neighbors['pm0'].Id ).not.to.be.null;
-		expect( neighbors['pm0'].Id ).to.equal( '1.-1.0' );
+	beforeEach(function () {
+		k = new Kluster(BuildKultureArray(-1, 1));
+	})
+	it("positive test case", function (done) {
+		let neighbors = k.GetNeighbors('0.0.0');
+		expect(neighbors['0+-']).ok;
+		expect(neighbors['0+-'].Id).ok;
+		expect(neighbors['0+-'].Id).to.equal('0.1.-1');
+		expect(neighbors['-0+']).ok;
+		expect(neighbors['-0+'].Id).ok;
+		expect(neighbors['-0+'].Id).to.equal('-1.0.1');
+		expect(neighbors['+-0']).ok;
+		expect(neighbors['+-0'].Id).ok;
+		expect(neighbors['+-0'].Id).to.equal('1.-1.0');
 		done();
-	} );
-} );
+	})
+	it("handles edge (of map) cases", function(done) {
+		let neighbors = k.GetNeighbors('-1.0.0');
+		expect(neighbors['0+-']).ok;
+		expect(neighbors['0+-'].Id).ok;
+		expect(neighbors['0+-'].Id).to.equal('-1.1.-1');
+		expect(neighbors['+-0']).ok;
+		expect(neighbors['+-0'].Id).ok;
+		expect(neighbors['+-0'].Id).to.equal('0.-1.0');
+		expect(neighbors['-0+']).to.be.null;
+		expect(neighbors['-+0']).to.be.null;
+		done();
+	})
+	it("handles non-existent center id", function (done) {
+		let result = k.GetNeighbors('13.13.13');
+		expect(result).to.be.null;
+		done();
+	})
+	it("handles a null center id", function (done) {
+		let result = k.GetById(null);
+		expect(result).to.be.null;
+		done();
+	})
+});
 
-// Helper functions
+{ // Helper functions
 
-function ExpectJSONValidateToThrow( good_json, deleteNode ) {
-	let bad_json = RemoveNodeFromJSON( good_json, deleteNode );
-	let matchString = "is required: data." + deleteNode;
-	let expectedError = function() { new Kulture( bad_json ) };
-	//expect( expectedError ).to.throwError( TypeError, eval( matchString ) );
-	expect( expectedError ).to.throw( matchString );
-}
-
-function RemoveNodeFromJSON( good_json, deleteNode ) {
-	let bad_json = JSON.parse(JSON.stringify(good_json));
-	let fullDeleteNode = "delete bad_json." + deleteNode;
-	eval( fullDeleteNode );
-	return bad_json;
-}
-
-function BuildKulture( x, y, z ) {
-	let id = x + '.' + y + '.' + z;
-	let name = 'I am ' + id;
-	let json = {
-		_id: id,
-		ref: {
-			name: name
-		},
-		display: {
-			loc: {
-				x: x,
-				y: y,
-				z: z
-			},
-			image: 'unknown'
-		},
-		attributes: {
-			growth: {},
-			invade: {},
-			defense: {},
-		},
-		status: {
-			energy: 100,
-			health: 200
-		}
+	function ExpectJSONValidateToThrow(good_json, deleteNode) {
+		let bad_json = RemoveNodeFromJSON(good_json, deleteNode);
+		let matchString = "is required: data." + deleteNode;
+		let expectedError = function () { new Kulture(bad_json) };
+		//expect( expectedError ).to.throwError( TypeError, eval( matchString ) );
+		expect(expectedError).to.throw(matchString);
 	}
-	let k = new Kulture( json );
-	//debug( '- BuildKulture ' + id );
-	return k;
-}
 
-function BuildKultureArray( start, end ) {
-	debug( "Entering BuildKultureArray" );
-	let kultures = [];
-	for( let x=start; x<=end; x++ ) {
-		for( let y=start; y<=end; y++ ) {
-			for( let z=start; z<=end; z++ ) {
-				kultures.push( BuildKulture( x,y,z ) );
+	function RemoveNodeFromJSON(good_json, deleteNode) {
+		let bad_json = JSON.parse(JSON.stringify(good_json));
+		let fullDeleteNode = "delete bad_json." + deleteNode;
+		eval(fullDeleteNode);
+		return bad_json;
+	}
+
+	function BuildKulture(x, y, z) {
+		let id = x + '.' + y + '.' + z;
+		let name = 'I am ' + id;
+		let json = {
+			_id: id,
+			ref: {
+				name: name
+			},
+			display: {
+				loc: {
+					x: x,
+					y: y,
+					z: z
+				},
+				image: 'unknown'
+			},
+			attributes: {
+				growth: {},
+				invade: {},
+				defense: {},
+			},
+			status: {
+				energy: 100,
+				health: 200
 			}
 		}
-	};
-	debug( '... Returning kulture array length ' + kultures.length );
-	return kultures;
-}
+		let k = new Kulture(json);
+		//debug( '- BuildKulture ' + id );
+		return k;
+	}
 
+	function BuildKultureArray(start, end) {
+		debug("Entering BuildKultureArray");
+		let kultures = [];
+		for (let x = start; x <= end; x++) {
+			for (let y = start; y <= end; y++) {
+				for (let z = start; z <= end; z++) {
+					kultures.push(BuildKulture(x, y, z));
+				}
+			}
+		};
+		debug('... Returning kulture array length ' + kultures.length);
+		return kultures;
+	}
+
+}
